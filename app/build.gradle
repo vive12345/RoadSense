@@ -34,7 +34,7 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = 'org.automotive.App'
+    mainClass = 'org.automotive.CANSimulation'
 }
 
 tasks.named('test') {

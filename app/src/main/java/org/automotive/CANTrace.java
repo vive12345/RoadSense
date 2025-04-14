@@ -1,10 +1,12 @@
+package org.automotive;
+
 import java.util.*;
 
 // this class stores all can frames and helps to manage them
 class CANTrace {
     // list to store all can frames
     private List<CANFrame> frames = new ArrayList<>();
-    
+
     // index to keep track of the next message
     private int currentIndex = 0;
 
@@ -22,7 +24,8 @@ class CANTrace {
 
     // method to get the next frame in the list
     public CANFrame getNextMessage() {
-        if (currentIndex >= frames.size()) return null;
+        if (currentIndex >= frames.size())
+            return null;
         return frames.get(currentIndex++);
     }
 

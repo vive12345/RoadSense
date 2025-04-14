@@ -1,0 +1,7 @@
+Frame ID; data field location (order: Byte 7 through Byte 0; each byte: bit 7 through bit 0); data field size in bits; data field description; value range and unit of decoded data; data field range; step size with unit
+
+0018; By7Bi5-By6Bi0; 14 bit; Steering wheel angle;  -2048 - +2047°;  0 - 8190; 0.5 ° (+ means clockwise)
+0F7A; By7Bi3-By6Bi0; 12 bit; Displayed vehicle speed; 0 - 409.4 km/h; 0 - 4094; 0.1 km/h
+0B41; By7Bi7-By6Bi0; 16 bit; Vehicle yaw rate; -327.68 - +327.66 °/s; 0 - 65534; 0.01 °/s (+ means clockwise looking from above)
+0B41; By3Bi7-By3Bi0; 8 bit; Vehicle longitudinal acceleration (+ means forward); -10.24 - +10.08 m/s²; 0 - 254; 0.08 m/s²
+0B41; By2Bi7-By2Bi0; 8 bit; Vehicle lateral acceleration (+ means left); -10.24 - +10.08 m/s²; 0 - 254; 0.08 m/s²

@@ -1,3 +1,5 @@
+package org.automotive;
+
 // class for steering wheel angle frame, extends can frame
 class SteeringWheelAngleFrame extends CANFrame {
     // variable to store the angle

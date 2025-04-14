@@ -1,3 +1,5 @@
+package org.automotive;
+
 import java.io.IOException;
 
 public class CANSimulation {
