@@ -41,7 +41,8 @@ tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
-// Add this to your app/build.gradle file
+// this was just to test the gps data is parsed from txt and converted to the list of not. 
+// we can comment this for main submission
 task runGPSTest(type: JavaExec, dependsOn: 'testClasses') {
     description = 'Run GPS parser test'
     group = 'application'

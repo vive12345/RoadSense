@@ -3,7 +3,9 @@ package org.automotive;
 import java.util.*;
 
 public class GPSTrace {
+    // list to store all gps coordinate
     private List<GPScoordinates> coordinates;
+    // index to keep track of the next message
     private int currentIndex = 0;
 
     public GPSTrace() {
