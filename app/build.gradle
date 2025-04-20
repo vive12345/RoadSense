@@ -41,3 +41,11 @@ tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
+// Add this to your app/build.gradle file
+task runGPSTest(type: JavaExec, dependsOn: 'testClasses') {
+    description = 'Run GPS parser test'
+    group = 'application'
+    mainClass = 'org.automotive.GPSParserTest'
+    classpath = sourceSets.test.runtimeClasspath
+    args = ["/Users/vipsakamani/Desktop/SER540_Team11/app/src/main/resources/GPStrace.txt"]
+}
