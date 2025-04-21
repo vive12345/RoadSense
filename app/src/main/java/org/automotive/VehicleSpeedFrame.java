@@ -12,6 +12,11 @@ class VehicleSpeedFrame extends CANFrame {
         this.speed = rawValue; // set the speed value
     }
 
+    // getter method for speed
+    public double getSpeed() {
+        return speed;
+    }
+
     // override toString method to return a string representation of the vehicle
     // speed frame
     @Override

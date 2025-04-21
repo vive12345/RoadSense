@@ -34,7 +34,7 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = 'org.automotive.CANSimulation'
+    mainClass = 'org.automotive.CANTraceSimulation'
 }
 
 tasks.named('test') {
@@ -49,4 +49,10 @@ task runGPSTest(type: JavaExec, dependsOn: 'testClasses') {
     mainClass = 'org.automotive.GPSParserTest'
     classpath = sourceSets.test.runtimeClasspath
     args = ["/Users/vipsakamani/Desktop/SER540_Team11/app/src/main/resources/GPStrace.txt"]
+}
+task runReceiver(type: JavaExec) {
+    description = 'Run the Receiver application'
+    group = 'application'
+    mainClass = 'org.automotive.Receiver'
+    classpath = sourceSets.main.runtimeClasspath
 }

@@ -11,6 +11,11 @@ class SteeringWheelAngleFrame extends CANFrame {
         this.angle = rawValue;
     }
 
+    // getter method for angle
+    public double getAngle() {
+        return angle;
+    }
+
     // method to return the frame details as a string
     @Override
     public String toString() {
