@@ -273,7 +273,7 @@ public class CANTraceSimulation {
      */
     private void sendGPSData(PrintWriter out, GPScoordinates coordinate) {
         // Format: GPS|TIMESTAMP|LATITUDE|LONGITUDE
-        String message = String.format("GPS|%.1f|%f|%f",
+        String message = String.format("[ GPS ]|%.1f|%f|%f",
                 coordinate.getTimeOffset(),
                 coordinate.getLatitude(),
                 coordinate.getLongitude());

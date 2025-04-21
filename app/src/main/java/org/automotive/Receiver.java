@@ -427,7 +427,7 @@ public class Receiver {
                 }
             }
         } catch (IOException e) {
-            System.out.println("\nError writing to log file: " + e.getMessage());
+            System.out.println("\n Issue encountered to Write in log file: " + e.getMessage());
         }
     }
 
