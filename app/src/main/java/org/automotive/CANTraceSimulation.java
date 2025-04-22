@@ -89,7 +89,7 @@ public class CANTraceSimulation {
 
                     // Send simulation complete message
                     out.println("SIMULATION_COMPLETE");
-                    System.out.println("Simulation completed successfully");
+                    System.out.println("====>>> Simulation completed successfully  <<<======");
                 }
 
             } catch (IOException e) {
@@ -125,7 +125,7 @@ public class CANTraceSimulation {
 
         // Store the simulation start time
         long startTime = System.currentTimeMillis();
-        double startTimedummy = System.currentTimeMillis();
+        // double startTimedummy = System.currentTimeMillis();
         System.out.println("Simulation started at: " + startTime);
 
         // Track the last sent time offset
@@ -210,10 +210,10 @@ public class CANTraceSimulation {
 
         // Calculate and print total simulation time
         long endTime = System.currentTimeMillis();
-        double endTimedummy = System.currentTimeMillis();
-        double totalDuration = endTimedummy - startTimedummy;
+        // double endTimedummy = System.currentTimeMillis();
+        long totalDuration = endTime - startTime;
         System.out.println("Simulation ended at: " + endTime);
-        System.out.println("Total simulation duration: " + totalDuration + " ms");
+        System.out.println("Total simulation duration (Long DataType) : " + totalDuration + " ms");
         System.out.println("Last time offset: " + lastTimeOffset + " ms");
     }
 

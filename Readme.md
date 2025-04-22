@@ -41,11 +41,9 @@ This project simulates/replays sensor values from a test drive with accurate tim
 ### Setup and Installation
 
 1. Clone the repository
-2. Navigate to the project directory
+2. Navigate to the project directory (in this case it's SER540_Team11)
 
 ### Compiling and Running
-
-#### Compiling the Project
 
 To compile the project, run:
 
@@ -53,7 +51,9 @@ To compile the project, run:
 ./gradlew build
 ```
 
-#### Running the Simulator
+### Note : Open two terminal on the IDE in one Paste "1. Running the Simulator" and in another terminal paste for client side "2. Running the Receiver"
+
+#### 1. Running the Simulator
 
 To run the Simulator, you need to provide both CAN trace and GPS trace file paths:
 
@@ -61,7 +61,7 @@ To run the Simulator, you need to provide both CAN trace and GPS trace file path
 ./gradlew run --args="$(pwd)/app/src/main/resources/18CANmessages.trc $(pwd)/app/src/main/resources/GPStrace.txt"
 ```
 
-#### Running the Receiver
+#### 2. Running the Receiver
 
 To run the Receiver client:
 
@@ -69,47 +69,84 @@ To run the Receiver client:
 ./gradlew runReceiver
 ```
 
+## Troubleshooting
+
+1. **Socket Connection Refused**:
+
+   - Ensure the Simulator is running before starting the Receiver
+   - Check that port 54000 is not blocked by your firewall
+
+2. **Missing or Invalid Data**:
+   - Verify that your CAN trace and GPS trace files are correctly formatted
+   - Check that file paths are specified correctly when running the Simulator
+
+```bash
+./gradlew run --args="<canfile_path> <GPSfile_path>"
+```
+
+3. **Custom gradle file missing **:
+   - Issue with running ./gradlew runReceiver command then check if the gradle has this if not add it:
+
+```bash
+task runReceiver(type: JavaExec) {
+    description = 'Run the Receiver application'
+    group = 'application'
+    mainClass = 'org.automotive.Receiver'
+    classpath = sourceSets.main.runtimeClasspath
+}
+```
+
+4. **Others**:
+   - Try to clean build you Gradle
+
+```bash
+./gradlew clean build
+```
+
 ## Project Features
 
-### Simulation Features
+#### Simulation Features
 
 - Real-time playback of sensor values with precise timing
 - Concurrent handling of CAN frames and GPS coordinates
 - Socket-based client-server architecture for data transmission
 - Support for multiple sensor types (steering wheel angle, vehicle speed, yaw rate, accelerations)
 
-### Display Features
+#### Display Features
 
-- Real-time console display of all sensor values
+- Real-time console display of all sensor values (Client Side)
+  ![alt text](image-3.png)
 - Log file creation with timestamps and system time deltas
-- Clean interface showing current simulation time and all sensor readings
+  ![alt text](image-5.png)
+- Console Output showing Server side socket connection msges
+  ![alt text](image-4.png)
 
-## Protocol Design
+## LOG FILE DESIGN
 
-The simulation uses a simple text-based protocol for communication:
-
-### CAN Frame Format
-
-```
-CAN|ID|TIMESTAMP|FRAME_TYPE|VALUES
-```
-
-Example:
+#### CAN Frame Format
 
 ```
-CAN|0018|1760|STEERING|SteeringWheelAngleFrame [ID=0018, Time=1760, Angle=45.5°]
-```
-
-### GPS Data Format
-
-```
-GPS|TIMESTAMP|LATITUDE|LONGITUDE
+CAN|ID|TIMESTAMP|FRAME_TYPE-VALUES|CURRENT_TIME
 ```
 
 Example:
 
 ```
-GPS|1000|52.721103|13.223500
+CAN|0018|443.8|STEERING|SteeringWheelAngleFrame [ID=0018, Time=443.8, Angle=2.0°] | 447ms
+CAN|0B41|6.8|DYNAMICS|-0.8799999999999955|0.7200000000000006|-0.2400000000000002 | 31ms
+CAN|0F7A|467.1|SPEED|VehicleSpeedFrame [ID=0F7A, Time=467.1, Speed=73.3 km/h] | 470ms
+```
+
+#### GPS Data Format
+
+```
+GPS|TIMESTAMP|LATITUDE|LONGITUDE|CURRENT_TIME
+```
+
+Example:
+
+```
+[ GPS ]|0.0|52.721103|13.223500 | 16ms
 ```
 
 ## Implementation Details
@@ -127,32 +164,11 @@ The simulation maintains accurate timing by:
 - The Simulator uses separate threads for each client connection
 - The Receiver uses separate threads for socket reception and message processing
 
-## Troubleshooting
-
-### Common Issues
-
-1. **Socket Connection Refused**:
-
-   - Ensure the Simulator is running before starting the Receiver
-   - Check that port 54000 is not blocked by your firewall
-
-2. **Missing or Invalid Data**:
-   - Verify that your CAN trace and GPS trace files are correctly formatted
-   - Check that file paths are specified correctly when running the Simulator
-
-## License
-
-This project is licensed under the Apache License 2.0. See the file headers for details.
-
-## Output
+## Output Images
 
 ![alt text](image.png)
 ![alt text](image-1.png)
 
-### as we can see that the when GPStrace.txt file has no data then the startsimulation is printing a error msg
+#### as we can see that the when GPStrace.txt file has no data then the startsimulation is printing a error msg
 
 ![alt text](image-2.png)
-
-## Future Development
-
-This project will be extended to include GPS data and real-time simulation capabilities.

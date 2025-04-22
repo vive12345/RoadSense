@@ -43,7 +43,7 @@ public class Receiver {
      */
     public void start() {
         // Show welcome message and wait for user input to start
-        System.out.println("=== CAN Trace Simulation Receiver ===");
+        System.out.println("<==== Simulation Receiver Started ====>");
         System.out.println("As Recieved an User input ./gradle run+Enter the simulation has started...");
 
         try {
@@ -66,7 +66,7 @@ public class Receiver {
                 receiveThread.join();
                 processThread.join();
 
-                System.out.println("\nSimulation completed. Press ENTER to exit.");
+                System.out.println("\n <========== Simulation completed ======>");
                 new BufferedReader(new InputStreamReader(System.in)).readLine();
             }
         } catch (IOException | InterruptedException e) {
@@ -150,7 +150,7 @@ public class Receiver {
                     String message = messageQueue.poll(100, TimeUnit.MILLISECONDS);
 
                     if (message != null) {
-                        // Calculate time delta
+                        // Calculate delta=when each msg received-when client requested simulation start
                         long currentTime = System.currentTimeMillis();
                         long timeDelta = currentTime - simulationStartTime;
 
