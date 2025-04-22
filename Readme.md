@@ -71,6 +71,10 @@ To run the Receiver client:
 
 ## Troubleshooting
 
+0. **Cache first time Issue**
+
+   - If the ./gradlew runReceiver doesn't work for first time (it's because cache is not established ) therefor try running it the second time again.
+
 1. **Socket Connection Refused**:
 
    - Ensure the Simulator is running before starting the Receiver
