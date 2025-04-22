@@ -4,16 +4,16 @@ This project simulates a CAN test drive replay by streaming GPS and sensor data 
 
 ## Requirements
 
-####     Java 
+*    Java 
 
-####     Gradle (wrapper included)
+*    Gradle (wrapper included)
 
 ## How to Run
 
 ### Step 1: Compile the Project
 
 ```bash
-./gradlew build 
+./gradlew build
 ```
 
 ### Step 2: Run the Simulator
