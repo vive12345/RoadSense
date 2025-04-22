@@ -1,12 +1,12 @@
 package org.automotive;
 
-public class GPScoordinates {
+public class GPSCoordinates {
     private double latitude;
     private double longitude;
     private double timeOffset; // in milliseconds
 
     // Constructor which
-    public GPScoordinates(double latitude, double longitude, double timeOffset) {
+    public GPSCoordinates(double latitude, double longitude, double timeOffset) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.timeOffset = timeOffset;

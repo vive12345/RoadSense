@@ -1,7 +1,7 @@
 package org.automotive;
 
 import java.io.*;
-import java.util.*; // ununsed remove it after testing
+
 
 public class GPSParser {
 
@@ -37,7 +37,7 @@ public class GPSParser {
                     // Calculate time offset - GPS coordinates are reported every second (1000ms)
                     double timeOffset = lineCount * 1000.0; // Convert to milliseconds
 
-                    GPScoordinates coordinate = new GPScoordinates(latitude, longitude, timeOffset);
+                    GPSCoordinates coordinate = new GPSCoordinates(latitude, longitude, timeOffset);
                     trace.addCoordinate(coordinate);
 
                     lineCount++;

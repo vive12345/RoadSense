@@ -2,7 +2,6 @@ package org.automotive;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
 
 public class CANTraceSimulation {
     private CANTrace canTrace;
@@ -132,14 +131,14 @@ public class CANTraceSimulation {
         double lastTimeOffset = 0;
 
         // Send the first GPS coordinate (offset 0)
-        GPScoordinates currentGPS = gpsTrace.getNextCoordinate();
+        GPSCoordinates currentGPS = gpsTrace.getNextCoordinate();
         if (currentGPS != null) {
             sendGPSData(out, currentGPS);
             lastTimeOffset = currentGPS.getTimeOffset();
         }
 
         // Get the next GPS coordinate
-        GPScoordinates nextGPS = gpsTrace.getNextCoordinate();
+        GPSCoordinates nextGPS = gpsTrace.getNextCoordinate();
         double nextGPSTime = (nextGPS != null) ? nextGPS.getTimeOffset() : Double.MAX_VALUE;
 
         // Process all CAN frames in time order
@@ -271,7 +270,7 @@ public class CANTraceSimulation {
      * @param out        PrintWriter to send data
      * @param coordinate The GPS coordinate to send
      */
-    private void sendGPSData(PrintWriter out, GPScoordinates coordinate) {
+    private void sendGPSData(PrintWriter out, GPSCoordinates coordinate) {
         // Format: GPS|TIMESTAMP|LATITUDE|LONGITUDE
         String message = String.format("[ GPS ]|%.1f|%f|%f",
                 coordinate.getTimeOffset(),

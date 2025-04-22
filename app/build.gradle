@@ -43,13 +43,15 @@ tasks.named('test') {
 }
 // this was just to test the gps data is parsed from txt and converted to the list of not. 
 // we can comment this for main submission
+
 task runGPSTest(type: JavaExec, dependsOn: 'testClasses') {
     description = 'Run GPS parser test'
     group = 'application'
     mainClass = 'org.automotive.GPSParserTest'
     classpath = sourceSets.test.runtimeClasspath
-    args = ["/Users/vipsakamani/Desktop/SER540_Team11/app/src/main/resources/GPStrace.txt"]
+    args = [file("src/main/resources/GPStrace.txt").absolutePath]
 }
+
 task runReceiver(type: JavaExec) {
     description = 'Run the Receiver application'
     group = 'application'

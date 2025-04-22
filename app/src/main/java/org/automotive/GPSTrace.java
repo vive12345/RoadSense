@@ -4,7 +4,7 @@ import java.util.*;
 
 public class GPSTrace {
     // list to store all gps coordinate
-    private List<GPScoordinates> coordinates;
+    private List<GPSCoordinates> coordinates;
     // index to keep track of the next message
     private int currentIndex = 0;
 
@@ -13,17 +13,17 @@ public class GPSTrace {
     }
 
     // Add a GPS coordinate to the trace
-    public void addCoordinate(GPScoordinates coordinate) {
+    public void addCoordinate(GPSCoordinates coordinate) {
         coordinates.add(coordinate);
     }
 
     // Get all coordinates
-    public List<GPScoordinates> getAllCoordinates() {
+    public List<GPSCoordinates> getAllCoordinates() {
         return coordinates;
     }
 
     // Get the next coordinate in the trace
-    public GPScoordinates getNextCoordinate() {
+    public GPSCoordinates getNextCoordinate() {
         if (currentIndex >= coordinates.size())
             return null;
         return coordinates.get(currentIndex++);
@@ -42,7 +42,7 @@ public class GPSTrace {
 
     // Get a coordinate at a specific index - we can actually remove it as well no
     // need
-    public GPScoordinates getCoordinateAt(int index) {
+    public GPSCoordinates getCoordinateAt(int index) {
         if (index >= 0 && index < coordinates.size()) {
             return coordinates.get(index);
         }

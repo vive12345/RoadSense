@@ -19,7 +19,7 @@ public class GPSParserTest {
             GPSTrace gpsTrace = GPSParser.parseGPSTraceFile(gpsFilePath);
 
             // Get all coordinates
-            List<GPScoordinates> coordinates = gpsTrace.getAllCoordinates();
+            List<GPSCoordinates> coordinates = gpsTrace.getAllCoordinates();
 
             // Print total count
             System.out.println("Successfully parsed " + coordinates.size() + " GPS coordinates");
@@ -27,7 +27,7 @@ public class GPSParserTest {
             // Print first 5 coordinates for verification
             System.out.println("\nFirst 5 coordinates:");
             for (int i = 0; i < Math.min(5, coordinates.size()); i++) {
-                GPScoordinates coord = coordinates.get(i);
+                GPSCoordinates coord = coordinates.get(i);
                 System.out.println("Coordinate " + i + ": " +
                         "Lat=" + coord.getLatitude() + ", " +
                         "Long=" + coord.getLongitude() + ", " +
@@ -37,7 +37,7 @@ public class GPSParserTest {
             // Print last 5 coordinates for verification
             System.out.println("\nLast 5 coordinates:");
             for (int i = Math.max(0, coordinates.size() - 5); i < coordinates.size(); i++) {
-                GPScoordinates coord = coordinates.get(i);
+                GPSCoordinates coord = coordinates.get(i);
                 System.out.println("Coordinate " + i + ": " +
                         "Lat=" + coord.getLatitude() + ", " +
                         "Long=" + coord.getLongitude() + ", " +
@@ -48,7 +48,7 @@ public class GPSParserTest {
             System.out.println("\nTesting iterator (first 3 coordinates):");
             gpsTrace.resetNextCoordinate();
             for (int i = 0; i < 3; i++) {
-                GPScoordinates coord = gpsTrace.getNextCoordinate();
+                GPSCoordinates coord = gpsTrace.getNextCoordinate();
                 if (coord != null) {
                     System.out.println("Next coordinate: " + coord);
                 } else {
