@@ -2,7 +2,6 @@ package org.automotive;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
 
 public class CANTraceSimulation {
     private CANTrace canTrace;
@@ -126,6 +125,7 @@ public class CANTraceSimulation {
 
         // Store the simulation start time
         long startTime = System.currentTimeMillis();
+        double startTimedummy = System.currentTimeMillis();
         System.out.println("Simulation started at: " + startTime);
 
         // Track the last sent time offset
@@ -210,7 +210,8 @@ public class CANTraceSimulation {
 
         // Calculate and print total simulation time
         long endTime = System.currentTimeMillis();
-        long totalDuration = endTime - startTime;
+        double endTimedummy = System.currentTimeMillis();
+        double totalDuration = endTimedummy - startTimedummy;
         System.out.println("Simulation ended at: " + endTime);
         System.out.println("Total simulation duration: " + totalDuration + " ms");
         System.out.println("Last time offset: " + lastTimeOffset + " ms");

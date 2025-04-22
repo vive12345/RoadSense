@@ -4,7 +4,6 @@ import java.io.*;
 import java.net.*;
 
 import java.util.concurrent.*;
-import java.text.DecimalFormat;
 
 public class Receiver {
     private static final String SERVER_ADDRESS = "localhost";
@@ -25,9 +24,6 @@ public class Receiver {
     private String gpsLatitude = "-";
     private String gpsLongitude = "-";
     private double currentSimTime = 0.0;
-
-    // Formatter for decimal values
-    private DecimalFormat df = new DecimalFormat("0.00");
 
     // Create a thread-safe queue for message processing
     private BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
@@ -193,7 +189,6 @@ public class Receiver {
             if (parts.length < 4)
                 return; // Skip invalid CAN messages
 
-            String id = parts[1];
             double timeOffset = Double.parseDouble(parts[2]);
             currentSimTime = timeOffset;
 
