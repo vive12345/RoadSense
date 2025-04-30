@@ -334,49 +334,51 @@ public class Receiver {
         receiver.start();
     }
 
+
     /**
      * Starts the Receiver application
      */
     public void start() {
         // Show welcome message and wait for user input to start
         System.out.println("<==== Simulation Receiver Started ====>");
-        System.out.println("Press ENTER to connect to simulator and start the simulation...");
 
-        try {
-            // Wait for user to press Enter
-            new BufferedReader(new InputStreamReader(System.in)).readLine();
-            System.out.println("As Recieved an User input ./gradle run+Enter the simulation has started...");
+        while(true) {//Reconnect loop
+            System.out.println("Press ENTER to connect to simulator and start the simulation...");
 
-            // Connect to simulator
-            if (connectToSimulator()) {
-                running = true;
-                simulationStartTime = System.nanoTime(); // Use nanoTime for precision
-
-                // Start threads for receiving and processing messages
-                Thread receiveThread = new Thread(this::socketReceive);
-                Thread processThread = new Thread(this::messageProcessing);
-
-                // Set thread priorities for better timing
-                receiveThread.setPriority(Thread.MAX_PRIORITY);
-                processThread.setPriority(Thread.NORM_PRIORITY);
-
-                receiveThread.start();
-                processThread.start();
-
-                // Wait for threads to finish
-                receiveThread.join();
-                processThread.join();
-
-                System.out.println("\n <========== Simulation completed ======>");
-                System.out.println("Press ENTER to exit.");
+            try {
+                // Wait for user to press Enter
                 new BufferedReader(new InputStreamReader(System.in)).readLine();
+                System.out.println("As Recieved an User input ./gradle run+Enter the simulation has started...");
+
+                // Connect to simulator
+                if (connectToSimulator()) {
+                    running = true;
+                    simulationStartTime = System.nanoTime(); // Use nanoTime for precision
+
+                    // Start threads for receiving and processing messages
+                    Thread receiveThread = new Thread(this::socketReceive);
+                    Thread processThread = new Thread(this::messageProcessing);
+
+                    // Set thread priorities for better timing
+                    receiveThread.setPriority(Thread.MAX_PRIORITY);
+                    processThread.setPriority(Thread.NORM_PRIORITY);
+
+                    receiveThread.start();
+                    processThread.start();
+
+                    // Wait for threads to finish
+                    receiveThread.join();
+                    processThread.join();
+
+                    System.out.println("\n <========== Simulation completed ======>");
+                    System.out.println("Press ENTER to exit.");
+                    new BufferedReader(new InputStreamReader(System.in)).readLine();
+                }
+            } catch (IOException | InterruptedException e) {
+                System.out.println("Error in Receiver application: " + e.getMessage());
+                e.printStackTrace();
+                break; //Exit
             }
-        } catch (IOException | InterruptedException e) {
-            System.out.println("Error in Receiver application: " + e.getMessage());
-            e.printStackTrace();
-        } finally {
-            // Clean up resources
-            closeConnection();
         }
     }
 

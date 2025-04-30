@@ -1,0 +1,9 @@
+Message ID | Time Offset | Values | System Time Delta
+---------------------------------------------------
+GPS|0.0|52.721103|13.223500 | 3ms
+CAN|0018|4.0|STEERING|SteeringWheelAngleFrame [ID=0018, Time=4.0, Angle=2.0°] | 17ms
+CAN|0B41|6.8|DYNAMICS|-0.8799999999999955|0.7200000000000006|-0.2400000000000002 | 18ms
+CAN|0018|13.8|STEERING|SteeringWheelAngleFrame [ID=0018, Time=13.8, Angle=2.0°] | 18ms
+CAN|0018|23.9|STEERING|SteeringWheelAngleFrame [ID=0018, Time=23.9, Angle=2.0°] | 24ms
+CAN|0B41|26.3|DYNAMICS|-0.6999999999999886|0.7200000000000006|-0.2400000000000002 | 26ms
+CAN|0018|33.9|STEERING|SteeringWheelAngleFrame [ID=0018, Time=33.9, Angle=2.0°] | 34ms
