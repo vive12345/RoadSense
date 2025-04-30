@@ -324,6 +324,10 @@ public class Receiver {
     // Create a thread-safe queue for message processing with larger capacity
     private BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>(1000);
 
+
+    private final SegmentManager segmentManager = new SegmentManager();
+    private final SegmentDetector segmentDetector = new SegmentDetector();
+
     /**
      * Main method to run the Receiver application
      * 
@@ -425,6 +429,8 @@ public class Receiver {
                 if (message.equals("SIMULATION_COMPLETE")) {
                     System.out.println("\nReceived simulation complete signal from simulator.");
                     running = false;
+                    segmentManager.finalizeSegment();
+                    segmentManager.printAll();  // prints all segment summaries
                     break;
                 }
 
@@ -495,6 +501,20 @@ public class Receiver {
      * @param logFile   FileWriter for logging
      */
     private void processMessage(String message, long timeDelta, Writer logFile) throws IOException {
+
+        if(!yawRate.equals("-")) {
+            segmentDetector.addYawValue(Double.parseDouble(yawRate));
+        }
+        double speed = vehicleSpeed.equals("-") ? 0.0 : Double.parseDouble(vehicleSpeed);
+        double yaw = yawRate.equals("-") ? 0.0 : Double.parseDouble(yawRate);
+        double longA = longAccel.equals("-") ? 0.0 : Double.parseDouble(longAccel);
+        double latA = latAccel.equals("-") ? 0.0 : Double.parseDouble(latAccel);
+        GPScoordinates gpsCoord = (gpsLatitude.equals("-") || gpsLongitude.equals("-")) ? null
+                : new GPScoordinates(Double.parseDouble(gpsLatitude), Double.parseDouble(gpsLongitude), currentSimTime);
+        SegmentType currentType = segmentDetector.getCurrentSegment();
+        segmentManager.update(currentType, gpsCoord, speed, yaw, longA, latA);
+
+
         // Split the message into parts
         String[] parts = message.split("\\|");
 
