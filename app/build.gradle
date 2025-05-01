@@ -65,3 +65,11 @@ task runEnhancedReceiver(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in  
 }
+// Run the Receiver with HMI GUI interface
+task runReceiverHMI(type: JavaExec) {
+    description = 'Run the Receiver application with ADAS HMI interface'
+    group = 'application'
+    mainClass = 'org.automotive.ReceiverWithHMI'
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+}
