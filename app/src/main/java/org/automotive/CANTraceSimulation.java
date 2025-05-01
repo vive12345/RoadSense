@@ -130,7 +130,7 @@ public class CANTraceSimulation {
         gpsTrace.resetNextCoordinate();
 
         // Store the simulation start time - changed from long to double
-        double startTime = System.currentTimeMillis();
+        double startTime = System.nanoTime();
 
         System.out.println("Simulation started at: " + startTime);
 
@@ -230,7 +230,7 @@ public class CANTraceSimulation {
         }
 
         // Calculate and print total simulation time - changed to double
-        double endTime = System.currentTimeMillis();
+        double endTime = System.nanoTime();
         double totalDuration = endTime - startTime; // Using consistent variables
         System.out.println("Simulation ended at: " + endTime);
         System.out.println("Total simulation duration: " + totalDuration + " ms");
@@ -247,7 +247,7 @@ public class CANTraceSimulation {
      * @return The time to wait in ms (as double for more precise sleeping)
      */
     private double calculateWaitTime(double startTime, double lastOffset, double currentOffset) {
-        double currentTime = System.currentTimeMillis();
+        double currentTime = System.nanoTime();
         double elapsedTime = currentTime - startTime;
         double targetTime = currentOffset;
 

@@ -57,3 +57,11 @@ task runReceiver(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in  
 }
+// Run the Enhanced Receiver with segment detection
+task runEnhancedReceiver(type: JavaExec) {
+    description = 'Run the Enhanced Receiver application with segment detection'
+    group = 'application'
+    mainClass = 'org.automotive.ReceiverEnhanced'
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in  
+}
