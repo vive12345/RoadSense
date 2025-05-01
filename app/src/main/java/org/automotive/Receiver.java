@@ -501,30 +501,14 @@ public class Receiver {
      * @param logFile   FileWriter for logging
      */
     private void processMessage(String message, long timeDelta, Writer logFile) throws IOException {
-
-        if(!yawRate.equals("-")) {
-            segmentDetector.addYawValue(Double.parseDouble(yawRate));
-        }
-        double speed = vehicleSpeed.equals("-") ? 0.0 : Double.parseDouble(vehicleSpeed);
-        double yaw = yawRate.equals("-") ? 0.0 : Double.parseDouble(yawRate);
-        double longA = longAccel.equals("-") ? 0.0 : Double.parseDouble(longAccel);
-        double latA = latAccel.equals("-") ? 0.0 : Double.parseDouble(latAccel);
-        GPScoordinates gpsCoord = (gpsLatitude.equals("-") || gpsLongitude.equals("-")) ? null
-                : new GPScoordinates(Double.parseDouble(gpsLatitude), Double.parseDouble(gpsLongitude), currentSimTime);
-        SegmentType currentType = segmentDetector.getCurrentSegment();
-        segmentManager.update(currentType, gpsCoord, speed, yaw, longA, latA);
-
-
         // Split the message into parts
         String[] parts = message.split("\\|");
 
         // Process message based on type
-        if (parts.length < 2)
-            return; // Skip invalid messages
+        if (parts.length < 2) return; // Skip invalid messages
 
         if (parts[0].trim().equals("CAN")) {
-            if (parts.length < 4)
-                return; // Skip invalid CAN messages
+            if (parts.length < 4) return;
 
             String id = parts[1];
             double timeOffset = Double.parseDouble(parts[2]);
@@ -551,8 +535,7 @@ public class Receiver {
                     break;
             }
         } else if (parts[0].trim().equals("GPS")) {
-            if (parts.length < 4)
-                return; // Skip invalid GPS messages
+            if (parts.length < 4) return;
 
             double timeOffset = Double.parseDouble(parts[1]);
             currentSimTime = timeOffset;
@@ -560,10 +543,27 @@ public class Receiver {
             gpsLongitude = parts[3];
         }
 
-        // Log the raw message with time delta
+        // After updating fields, compute values for segment logic
+        double speed = vehicleSpeed.equals("-") ? 0.0 : Double.parseDouble(vehicleSpeed);
+        double yaw = yawRate.equals("-") ? 0.0 : Double.parseDouble(yawRate);
+        double longA = longAccel.equals("-") ? 0.0 : Double.parseDouble(longAccel);
+        double latA = latAccel.equals("-") ? 0.0 : Double.parseDouble(latAccel);
+        GPScoordinates gpsCoord = (gpsLatitude.equals("-") || gpsLongitude.equals("-")) ? null
+                : new GPScoordinates(Double.parseDouble(gpsLatitude), Double.parseDouble(gpsLongitude), currentSimTime);
+
+        if (!yawRate.equals("-")) {
+            segmentDetector.addYawValue(Double.parseDouble(yawRate));
+        }
+
+        if (gpsCoord != null) {
+            SegmentType currentType = segmentDetector.getCurrentSegment();
+            segmentManager.update(currentType, gpsCoord, speed, yaw, longA, latA);
+        }
+
+        // Log raw message with system time delta
         logFile.write(message + " | " + timeDelta + "ms\n");
-        logFile.flush(); // Ensure data is written immediately
     }
+
 
     /**
      * Extracts a value from a string containing key-value pairs
