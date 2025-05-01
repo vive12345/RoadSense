@@ -7,6 +7,9 @@
     <list default="true" id="d0dd9287-cd85-47db-8667-e9c7af3eb2ce" name="Changes" comment="Finalized version">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/simulation_log.txt" beforeDir="false" afterPath="$PROJECT_DIR$/app/simulation_log.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/org/automotive/Receiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/org/automotive/Receiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/org/automotive/SegmentData.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/org/automotive/SegmentData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/org/automotive/SegmentManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/org/automotive/SegmentManager.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,16 +73,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.SER540_Team11:app [:app:org.automotive.CANTraceSimulation.main()].executor": "Run",
-    "Gradle.SER540_Team11:app [:app:org.automotive.Receiver.main()].executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "Project2Dev",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/Users/prince/Documents/GitHub/SER540_Team11"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.SER540_Team11:app [:app:org.automotive.CANTraceSimulation.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.SER540_Team11:app [:app:org.automotive.Receiver.main()].executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Project2Dev&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/prince/Documents/GitHub/SER540_Team11&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration default="true" type="JetRunConfigurationType">
       <module name="SER540_Team11" />

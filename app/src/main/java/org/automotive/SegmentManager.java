@@ -65,6 +65,22 @@ public class SegmentManager {
         }
     }
 
+    public SegmentData findUpcomingSegment(GPScoordinates currentGPS, double thresholdMeters) {
+        if (currentGPS == null) return null;
+
+        for (SegmentData segment : segments) {
+            double dist = SegmentData.haversine(
+                    currentGPS.getLatitude(), currentGPS.getLongitude(),
+                    segment.startGPS.getLatitude(), segment.startGPS.getLongitude());
+
+            if (dist <= thresholdMeters) {
+                return segment;
+            }
+        }
+
+        return null; // No segment nearby
+    }
+
     public List<SegmentData> getSegments() {
         return segments;
     }

@@ -620,8 +620,39 @@ public class Receiver {
                 timeStr, speedStr, steerStr, yawStr, latStr, longStr, gpsStr);
 
         // Print the line with carriage return to update in place
-        System.out.print(displayLine);
+        System.out.print(displayLine + "                              "); // padding to overwrite leftovers
+
         System.out.flush();
+
+        // Curve Warning Assist (Part 3)
+        if (!gpsLatitude.equals("-") && !gpsLongitude.equals("-")) {
+            GPScoordinates current = new GPScoordinates(
+                    Double.parseDouble(gpsLatitude),
+                    Double.parseDouble(gpsLongitude),
+                    currentSimTime
+            );
+
+            SegmentData upcoming = segmentManager.findUpcomingSegment(current, 50.0);
+            if (upcoming != null) {
+                double distance = SegmentData.haversine(
+                        current.getLatitude(), current.getLongitude(),
+                        upcoming.startGPS.getLatitude(), upcoming.startGPS.getLongitude());
+
+                String warning = String.format("→ Upcoming segment in %.1f m | %s",
+                        distance, upcoming.type);
+
+                if (upcoming.type == SegmentType.CURVE) {
+                    double delta = (upcoming.endHeading - upcoming.startHeading + 540) % 360 - 180;
+                    String turnDirection = delta > 5 ? "Right" : (delta < -5 ? "Left" : "Straight");
+                    warning += " | Direction: " + upcoming.getCurveDirection();
+
+
+                }
+
+                System.out.println("\n" + warning);
+            }
+        }
+
     }
 
     /**

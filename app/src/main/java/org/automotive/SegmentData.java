@@ -47,9 +47,11 @@ public class SegmentData {
         return R * c; // in meters
     }
 
-    private String getCurveDirection() {
-        double delta = (endHeading - startHeading + 360) % 360;
-        return delta > 180 ? "Left" : "Right";
+    String getCurveDirection() {
+        double avgYaw = getAvg(yawRates);
+        if (avgYaw > 0) return "Right";
+        else if (avgYaw < 0) return "Left";
+        else return "Straight";
     }
 
 
