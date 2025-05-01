@@ -55,4 +55,5 @@ task runReceiver(type: JavaExec) {
     group = 'application'
     mainClass = 'org.automotive.Receiver'
     classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in  
 }
