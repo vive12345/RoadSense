@@ -7,6 +7,7 @@ import java.util.List;
 /**
  * This class represents data for a detected road segment (straight or curve)
  * and stores various sensor measurements collected during that segment.
+ * It implements all of the required data extraction for Project 2 Part 2.
  */
 public class SegmentData {
     // Segment type (straight or curve)
@@ -28,9 +29,11 @@ public class SegmentData {
     private double maxSpeed; // km/h
     private double minSpeed; // km/h
 
-    // Acceleration information (longitudinal for straight, lateral for curve)
-    private double maxAcceleration; // m/s²
-    private double minAcceleration; // m/s²
+    // Acceleration information
+    private double maxLongAcceleration; // m/s² (for straight segments)
+    private double minLongAcceleration; // m/s² (for straight segments)
+    private double maxLatAcceleration; // m/s² (for curve segments)
+    private double minLatAcceleration; // m/s² (for curve segments)
 
     // Additional curve information
     private String curveDirection; // "left" or "right"
@@ -40,9 +43,11 @@ public class SegmentData {
 
     // Data collection for calculations
     private List<Double> speedValues = new ArrayList<>();
-    private List<Double> accelerationValues = new ArrayList<>();
+    private List<Double> longAccelerationValues = new ArrayList<>();
+    private List<Double> latAccelerationValues = new ArrayList<>();
     private List<Double> yawRateValues = new ArrayList<>();
-    private double initialHeading; // for calculating curve degrees
+    private List<Double> headingValues = new ArrayList<>();
+    private List<GPScoordinates> gpsPoints = new ArrayList<>();
 
     /**
      * Constructor for a new segment
@@ -57,14 +62,39 @@ public class SegmentData {
         this.type = type;
         this.startTime = startTime;
         this.startCoordinates = startCoords;
-        this.initialHeading = initialHeading;
+
+        // Add initial data points
+        this.gpsPoints.add(startCoords);
+        this.headingValues.add(initialHeading);
 
         // Initialize with extreme values to ensure they'll be updated
         this.maxSpeed = Double.MIN_VALUE;
         this.minSpeed = Double.MAX_VALUE;
-        this.maxAcceleration = Double.MIN_VALUE;
-        this.minAcceleration = Double.MAX_VALUE;
+        this.maxLongAcceleration = Double.MIN_VALUE;
+        this.minLongAcceleration = Double.MAX_VALUE;
+        this.maxLatAcceleration = Double.MIN_VALUE;
+        this.minLatAcceleration = Double.MAX_VALUE;
         this.maxYawRate = Double.MIN_VALUE;
+    }
+
+    /**
+     * Add a GPS coordinate to the segment
+     * 
+     * @param coords The GPS coordinates
+     */
+    public void addGPSCoordinate(GPScoordinates coords) {
+        if (coords != null) {
+            gpsPoints.add(coords);
+        }
+    }
+
+    /**
+     * Add a heading value to the segment
+     * 
+     * @param heading The vehicle heading in degrees
+     */
+    public void addHeading(double heading) {
+        headingValues.add(heading);
     }
 
     /**
@@ -85,20 +115,36 @@ public class SegmentData {
     }
 
     /**
-     * Add acceleration value to the segment data
+     * Add longitudinal acceleration value to the segment data
      * 
-     * @param acceleration The vehicle acceleration (longitudinal for straight,
-     *                     lateral for curve) in m/s²
+     * @param acceleration The vehicle longitudinal acceleration in m/s²
      */
-    public void addAccelerationValue(double acceleration) {
-        accelerationValues.add(acceleration);
+    public void addLongitudinalAcceleration(double acceleration) {
+        longAccelerationValues.add(acceleration);
 
         // Update min and max values
-        if (acceleration > maxAcceleration) {
-            maxAcceleration = acceleration;
+        if (acceleration > maxLongAcceleration) {
+            maxLongAcceleration = acceleration;
         }
-        if (acceleration < minAcceleration) {
-            minAcceleration = acceleration;
+        if (acceleration < minLongAcceleration) {
+            minLongAcceleration = acceleration;
+        }
+    }
+
+    /**
+     * Add lateral acceleration value to the segment data
+     * 
+     * @param acceleration The vehicle lateral acceleration in m/s²
+     */
+    public void addLateralAcceleration(double acceleration) {
+        latAccelerationValues.add(acceleration);
+
+        // Update min and max values
+        if (acceleration > maxLatAcceleration) {
+            maxLatAcceleration = acceleration;
+        }
+        if (acceleration < minLatAcceleration) {
+            minLatAcceleration = acceleration;
         }
     }
 
@@ -110,14 +156,27 @@ public class SegmentData {
     public void addYawRateValue(double yawRate) {
         yawRateValues.add(yawRate);
 
-        // Update max value
+        // Update max value (use absolute value for max)
         if (Math.abs(yawRate) > maxYawRate) {
             maxYawRate = Math.abs(yawRate);
         }
 
         // Determine curve direction based on yaw rate sign
-        if (type == SegmentDetector.SegmentType.CURVE && curveDirection == null) {
-            curveDirection = (yawRate > 0) ? "right" : "left";
+        // For consistency, use the predominant direction during the curve
+        if (type == SegmentDetector.SegmentType.CURVE) {
+            // Count positive and negative yaw rates to determine predominant direction
+            int positiveCount = 0;
+            int negativeCount = 0;
+
+            for (Double rate : yawRateValues) {
+                if (rate > 0)
+                    positiveCount++;
+                else if (rate < 0)
+                    negativeCount++;
+            }
+
+            // Set direction based on predominant sign
+            curveDirection = (positiveCount >= negativeCount) ? "right" : "left";
         }
     }
 
@@ -131,6 +190,14 @@ public class SegmentData {
     public void finalizeSegment(double endTime, GPScoordinates endCoords, double finalHeading) {
         this.endTime = endTime;
         this.endCoordinates = endCoords;
+
+        // Add final GPS and heading
+        if (endCoords != null) {
+            gpsPoints.add(endCoords);
+        }
+        if (headingValues.size() > 0) {
+            headingValues.add(finalHeading);
+        }
 
         // Calculate average speed
         if (!speedValues.isEmpty()) {
@@ -148,17 +215,72 @@ public class SegmentData {
                 sum += Math.abs(value); // Use absolute values for average
             }
             averageYawRate = sum / yawRateValues.size();
-
-            // Calculate curve degrees (heading change)
-            curveDegrees = Math.abs(finalHeading - initialHeading);
-            if (curveDegrees > 180) {
-                curveDegrees = 360 - curveDegrees; // Take the smaller angle
-            }
         }
 
-        // Calculate length for straight segments using GPS coordinates
+        // Calculate curve degrees (total heading change)
+        calculateCurveDegrees();
+
+        // Calculate segment length
+        calculateSegmentLength();
+    }
+
+    /**
+     * Calculate curve degrees based on heading changes
+     */
+    private void calculateCurveDegrees() {
+        if (type == SegmentDetector.SegmentType.CURVE && headingValues.size() >= 2) {
+            // Get the initial and final headings
+            double initialHeading = headingValues.get(0);
+            double finalHeading = headingValues.get(headingValues.size() - 1);
+
+            // Calculate the absolute difference in headings
+            double rawDifference = Math.abs(finalHeading - initialHeading);
+
+            // Normalize to get the smaller angle (heading is 0-360)
+            curveDegrees = (rawDifference > 180) ? 360 - rawDifference : rawDifference;
+
+            // If we have more than 2 heading values, calculate total accumulated heading
+            // change
+            if (headingValues.size() > 2) {
+                double accumulatedChange = 0;
+                for (int i = 1; i < headingValues.size(); i++) {
+                    double prev = headingValues.get(i - 1);
+                    double curr = headingValues.get(i);
+                    double diff = Math.abs(curr - prev);
+
+                    // Normalize difference
+                    if (diff > 180) {
+                        diff = 360 - diff;
+                    }
+
+                    accumulatedChange += diff;
+                }
+
+                // Use accumulated change if it's larger (for curves that go back and forth)
+                if (accumulatedChange > curveDegrees) {
+                    curveDegrees = accumulatedChange;
+                }
+            }
+        } else {
+            curveDegrees = 0.0; // Default for straight segments or insufficient data
+        }
+    }
+
+    /**
+     * Calculate the segment length
+     */
+    private void calculateSegmentLength() {
         if (type == SegmentDetector.SegmentType.STRAIGHT) {
-            length = calculateDistance(startCoordinates, endCoordinates);
+            // For straight segments, use direct distance between start and end points
+            if (startCoordinates != null && endCoordinates != null) {
+                length = calculateDistance(startCoordinates, endCoordinates);
+            } else {
+                length = 0.0;
+            }
+        } else {
+            // For curve segments, we could calculate path length or just set to 0
+            // In this implementation, we'll set it to 0 as it's not required for curves
+            length = 0.0;
         }
     }
 
@@ -216,22 +338,22 @@ public class SegmentData {
         if (type == SegmentDetector.SegmentType.STRAIGHT) {
             System.out.println("\nSTRAIGHT SEGMENT DATA:");
             System.out.println("  Length: " + df.format(length) + " m");
-            System.out.println("  Max longitudinal acceleration: " + df.format(maxAcceleration) + " m/s²");
-            System.out.println("  Min longitudinal acceleration: " + df.format(minAcceleration) + " m/s²");
+            System.out.println("  Max longitudinal acceleration: " + df.format(maxLongAcceleration) + " m/s²");
+            System.out.println("  Min longitudinal acceleration: " + df.format(minLongAcceleration) + " m/s²");
         } else {
             System.out.println("\nCURVE SEGMENT DATA:");
             System.out.println("  Direction: " + curveDirection);
             System.out.println("  Curve degrees: " + df.format(curveDegrees) + "°");
             System.out.println("  Average yaw rate: " + df.format(averageYawRate) + " °/s");
             System.out.println("  Maximum yaw rate: " + df.format(maxYawRate) + " °/s");
-            System.out.println("  Maximum lateral acceleration: " + df.format(maxAcceleration) + " m/s²");
-            System.out.println("  Minimum lateral acceleration: " + df.format(minAcceleration) + " m/s²");
+            System.out.println("  Maximum lateral acceleration: " + df.format(maxLatAcceleration) + " m/s²");
+            System.out.println("  Minimum lateral acceleration: " + df.format(minLatAcceleration) + " m/s²");
         }
 
         System.out.println("====================================");
     }
 
-    // Getters
+    // Getters and setters
     public SegmentDetector.SegmentType getType() {
         return type;
     }
@@ -264,12 +386,20 @@ public class SegmentData {
         return minSpeed;
     }
 
-    public double getMaxAcceleration() {
-        return maxAcceleration;
+    public double getMaxLongAcceleration() {
+        return maxLongAcceleration;
     }
 
-    public double getMinAcceleration() {
-        return minAcceleration;
+    public double getMinLongAcceleration() {
+        return minLongAcceleration;
+    }
+
+    public double getMaxLatAcceleration() {
+        return maxLatAcceleration;
+    }
+
+    public double getMinLatAcceleration() {
+        return minLatAcceleration;
     }
 
     public String getCurveDirection() {
