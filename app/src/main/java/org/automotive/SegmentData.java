@@ -187,6 +187,7 @@ public class SegmentData {
      * @param endCoords    The GPS coordinates at segment end
      * @param finalHeading The final vehicle heading at segment end
      */
+    // Modify finalizeSegment() in SegmentData.java
     public void finalizeSegment(double endTime, GPScoordinates endCoords, double finalHeading) {
         this.endTime = endTime;
         this.endCoordinates = endCoords;
@@ -219,6 +220,11 @@ public class SegmentData {
 
         // Calculate curve degrees (total heading change)
         calculateCurveDegrees();
+
+        // If heading-based calculation fails, use yaw rate method as backup
+        if (type == SegmentDetector.SegmentType.CURVE && curveDegrees < 0.1) {
+            calculateCurveDegreesFromYawRate();
+        }
 
         // Calculate segment length
         calculateSegmentLength();
@@ -266,21 +272,46 @@ public class SegmentData {
         }
     }
 
-    /**
-     * Calculate the segment length
-     */
+    // Enhanced length calculation for straight segments
     private void calculateSegmentLength() {
         if (type == SegmentDetector.SegmentType.STRAIGHT) {
-            // For straight segments, use direct distance between start and end points
-            if (startCoordinates != null && endCoordinates != null) {
-                length = calculateDistance(startCoordinates, endCoordinates);
+            if (gpsPoints.size() >= 2) {
+                // If we have multiple GPS points, calculate the sum of all segments
+                if (gpsPoints.size() > 2) {
+                    double totalLength = 0.0;
+                    for (int i = 1; i < gpsPoints.size(); i++) {
+                        totalLength += calculateDistance(gpsPoints.get(i - 1), gpsPoints.get(i));
+                    }
+                    length = totalLength;
+                } else {
+                    // Just start and end points
+                    length = calculateDistance(startCoordinates, endCoordinates);
+                }
             } else {
                 length = 0.0;
             }
         } else {
-            // For curve segments, we could calculate path length or just set to 0
-            // In this implementation, we'll set it to 0 as it's not required for curves
+            // For curve segments
             length = 0.0;
+        }
+    }
+
+    // Add to SegmentData.java
+    private void calculateCurveDegreesFromYawRate() {
+        if (type == SegmentDetector.SegmentType.CURVE && !yawRateValues.isEmpty()) {
+            // Calculate duration in seconds
+            double durationSeconds = (endTime - startTime) / 1000.0;
+
+            // If we have average yaw rate and duration, we can calculate the total rotation
+            if (averageYawRate != 0 && durationSeconds > 0) {
+                // Total degrees = average yaw rate * time
+                double totalDegrees = Math.abs(averageYawRate) * durationSeconds;
+
+                // Use this if our heading-based calculation failed
+                if (curveDegrees <= 0.1) { // If very small or zero
+                    curveDegrees = totalDegrees;
+                }
+            }
         }
     }
 

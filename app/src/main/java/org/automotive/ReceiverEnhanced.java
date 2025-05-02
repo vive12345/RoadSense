@@ -421,6 +421,11 @@ public class ReceiverEnhanced {
         if (lastSegmentType != null && currentType != lastSegmentType) {
             // Segment type changed, finalize the current segment
             if (currentSegment != null) {
+                // Always add GPS coordinate to track the path
+                currentSegment.addGPSCoordinate(currentGPS);
+
+                // Add heading for trajectory calculation
+                currentSegment.addHeading(lastHeading);
                 finalizeCurrentSegment();
             }
 

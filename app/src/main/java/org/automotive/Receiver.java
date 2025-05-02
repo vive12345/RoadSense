@@ -30,7 +30,7 @@ public class Receiver {
     private DecimalFormat df = new DecimalFormat("0.0");
 
     // Create a thread-safe queue for message processing with larger capacity
-    private BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>(1000);
+    private BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>(8192);
 
     /**
      * Main method to run the Receiver application
@@ -101,7 +101,6 @@ public class Receiver {
             // Connect to simulator
             if (connectToSimulator()) {
                 running = true;
-                simulationStartTime = System.nanoTime(); // Use nanoTime for precision
 
                 // Start threads for receiving and processing messages
                 Thread receiveThread = new Thread(this::socketReceive);
@@ -141,7 +140,8 @@ public class Receiver {
 
             // Configure socket for optimal performance
             socket.setTcpNoDelay(true);
-            socket.setReceiveBufferSize(8192);
+            socket.setReceiveBufferSize(65536);
+            socket.setSoTimeout(0);
 
             out = new PrintWriter(new BufferedOutputStream(socket.getOutputStream()), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -176,7 +176,7 @@ public class Receiver {
                 }
 
                 // Add message to queue for processing
-                boolean added = messageQueue.offer(message, 50, TimeUnit.MILLISECONDS);
+                boolean added = messageQueue.offer(message);
                 if (!added) {
                     System.out.println("\nWarning: Message queue full, dropped message: " + message);
                 }
@@ -185,9 +185,9 @@ public class Receiver {
             if (running) {
                 System.out.println("\nError reading from socket: " + e.getMessage());
             }
-        } catch (InterruptedException e) {
-            System.out.println("\nMessage queue interrupted: " + e.getMessage());
-            Thread.currentThread().interrupt();
+            // } catch (InterruptedException e) {
+            // System.out.println("\nMessage queue interrupted: " + e.getMessage());
+            // Thread.currentThread().interrupt();
         } finally {
             running = false;
         }
@@ -204,7 +204,7 @@ public class Receiver {
             // Write the header
             logFile.write("Message ID | Time Offset | Values | System Time Delta\n");
             logFile.write("---------------------------------------------------\n");
-
+            simulationStartTime = System.nanoTime(); // Use nanoTime for precision
             // Process messages from the queue
             while (running || !messageQueue.isEmpty()) {
                 try {
@@ -212,6 +212,7 @@ public class Receiver {
                     String message = messageQueue.poll(10, TimeUnit.MILLISECONDS);
 
                     if (message != null) {
+
                         // Calculate time delta with nanosecond precision
                         long currentTimeNanos = System.nanoTime();
                         long timeDeltaNanos = currentTimeNanos - simulationStartTime;
