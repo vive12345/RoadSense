@@ -230,6 +230,10 @@ public class SegmentData {
         calculateSegmentLength();
     }
 
+    public void setCurveDirection(String direction) {
+        this.curveDirection = direction;
+    }
+
     /**
      * Calculate curve degrees based on heading changes
      */

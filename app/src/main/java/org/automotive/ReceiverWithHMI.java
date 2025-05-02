@@ -57,7 +57,6 @@ public class ReceiverWithHMI {
 
     // Formatter for decimal values - limit to 1 decimal place for display
     private DecimalFormat df = new DecimalFormat("0.0");
-    private DecimalFormat df2 = new DecimalFormat("0.00");
 
     // Create a thread-safe queue for message processing with larger capacity
     private BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>(1000);
@@ -461,9 +460,6 @@ public class ReceiverWithHMI {
         logFile.flush(); // Ensure data is written immediately
     }
 
-    /**
-     * Detect road segments based on sensor data and extract segment-specific data
-     */
     private void detectSegment() {
         // Only start detection when we have all necessary sensor data
         if (steeringAngleStr.equals("-") || yawRateStr.equals("-") || currentGPS == null) {
@@ -472,19 +468,40 @@ public class ReceiverWithHMI {
 
         // Detect segment type using the detector
         SegmentDetector.SegmentType currentType = segmentDetector.updateAndDetect(yawRate, steeringAngle);
+        SegmentDetector.CurveDirection curveDir = segmentDetector.getCurveDirection();
 
         // Check if segment type has changed
         if (lastSegmentType != null && currentType != lastSegmentType) {
             // Segment type changed, finalize the current segment
             if (currentSegment != null) {
+                // Always add GPS coordinate to track the path
+                currentSegment.addGPSCoordinate(currentGPS);
+
+                // Add heading for trajectory calculation
+                currentSegment.addHeading(lastHeading);
                 finalizeCurrentSegment();
             }
 
             // Start a new segment
             currentSegment = new SegmentData(currentType, currentSimTime, currentGPS, lastHeading);
+
+            // Set curve direction if we're entering a curve
+            if (currentType == SegmentDetector.SegmentType.CURVE && curveDir != SegmentDetector.CurveDirection.NONE) {
+                currentSegment.setCurveDirection(curveDir == SegmentDetector.CurveDirection.LEFT ? "left" : "right");
+            }
         } else if (lastSegmentType == null) {
             // First segment, start it
             currentSegment = new SegmentData(currentType, currentSimTime, currentGPS, lastHeading);
+
+            // Set curve direction if it's a curve
+            if (currentType == SegmentDetector.SegmentType.CURVE && curveDir != SegmentDetector.CurveDirection.NONE) {
+                currentSegment.setCurveDirection(curveDir == SegmentDetector.CurveDirection.LEFT ? "left" : "right");
+            }
+        } else if (currentType == SegmentDetector.SegmentType.CURVE &&
+                curveDir != SegmentDetector.CurveDirection.NONE &&
+                currentSegment != null) {
+            // Update curve direction continually during a curve (in case it changes)
+            currentSegment.setCurveDirection(curveDir == SegmentDetector.CurveDirection.LEFT ? "left" : "right");
         }
 
         // Update the current segment with sensor data

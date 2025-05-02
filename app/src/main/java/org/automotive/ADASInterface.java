@@ -4,13 +4,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.AffineTransform;
 import java.text.DecimalFormat;
 
 /**
- * This class implements a graphical HMI (Human-Machine Interface) for the ADAS
- * Curve Warning system.
- * It provides a visual display of upcoming road segments, warnings, and current
- * vehicle status.
+ * This class implements a simplified graphical HMI (Human-Machine Interface)
+ * for the ADAS
+ * Curve Warning system, featuring just a steering wheel and warning indicators.
  */
 public class ADASInterface extends JFrame {
     // Constants for display
@@ -35,9 +35,8 @@ public class ADASInterface extends JFrame {
     // UI Components
     private JPanel mainPanel;
     private JPanel warningPanel;
-    private JPanel speedometerPanel;
-    private JPanel segmentInfoPanel;
-    private JPanel mapPanel;
+    private JPanel infoPanel;
+    private JPanel steeringPanel;
 
     // Labels for displaying information
     private JLabel speedLabel;
@@ -60,6 +59,11 @@ public class ADASInterface extends JFrame {
     private double distanceToSegment = Double.MAX_VALUE;
     private boolean isDataCollectionMode = true;
     private double simulationTime = 0;
+
+    // Alert icon state
+    private boolean showAlert = false;
+    private long alertStartTime = 0;
+    private static final long ALERT_BLINK_INTERVAL = 500; // milliseconds
 
     /**
      * Constructor for the ADAS Interface
@@ -88,6 +92,30 @@ public class ADASInterface extends JFrame {
 
         // Make visible
         setVisible(true);
+
+        // Start the alert blink timer
+        startAlertTimer();
+    }
+
+    /**
+     * Starts a timer for blinking alert icons
+     */
+    private void startAlertTimer() {
+        Timer timer = new Timer(100, e -> {
+            // Update alert state every ALERT_BLINK_INTERVAL
+            if (System.currentTimeMillis() - alertStartTime > ALERT_BLINK_INTERVAL) {
+                showAlert = !showAlert;
+                alertStartTime = System.currentTimeMillis();
+
+                // Only repaint if we have an immediate warning
+                if (upcomingSegment != null &&
+                        upcomingSegment.getType() == SegmentDetector.SegmentType.CURVE &&
+                        distanceToSegment <= IMMEDIATE_WARNING_DISTANCE) {
+                    steeringPanel.repaint();
+                }
+            }
+        });
+        timer.start();
     }
 
     /**
@@ -101,20 +129,16 @@ public class ADASInterface extends JFrame {
         // Create the warning panel (top)
         createWarningPanel();
 
-        // Create the speedometer panel (left)
-        createSpeedometerPanel();
+        // Create the info panel (left)
+        createInfoPanel();
 
-        // Create segment info panel (right)
-        createSegmentInfoPanel();
-
-        // Create map panel (center)
-        createMapPanel();
+        // Create the steering wheel panel (center)
+        createSteeringPanel();
 
         // Add panels to main panel
         mainPanel.add(warningPanel, BorderLayout.NORTH);
-        mainPanel.add(speedometerPanel, BorderLayout.WEST);
-        mainPanel.add(segmentInfoPanel, BorderLayout.EAST);
-        mainPanel.add(mapPanel, BorderLayout.CENTER);
+        mainPanel.add(infoPanel, BorderLayout.WEST);
+        mainPanel.add(steeringPanel, BorderLayout.CENTER);
 
         // Set the content pane
         setContentPane(mainPanel);
@@ -140,14 +164,14 @@ public class ADASInterface extends JFrame {
     }
 
     /**
-     * Create the speedometer panel showing current vehicle metrics
+     * Create the info panel showing current vehicle metrics
      */
-    private void createSpeedometerPanel() {
-        speedometerPanel = new JPanel();
-        speedometerPanel.setLayout(new BoxLayout(speedometerPanel, BoxLayout.Y_AXIS));
-        speedometerPanel.setBackground(BACKGROUND_COLOR);
-        speedometerPanel.setPreferredSize(new Dimension(200, WINDOW_HEIGHT - 80));
-        speedometerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    private void createInfoPanel() {
+        infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setBackground(BACKGROUND_COLOR);
+        infoPanel.setPreferredSize(new Dimension(250, WINDOW_HEIGHT - 80));
+        infoPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Simulation time
         JLabel timeTitle = createLabel("Simulation Time", 14, Font.BOLD);
@@ -167,35 +191,7 @@ public class ADASInterface extends JFrame {
         segmentTypeLabel = createLabel("Unknown", 18, Font.PLAIN);
         segmentTypeLabel.setForeground(STRAIGHT_COLOR);
 
-        // Recording status
-        recordingLabel = createLabel(isDataCollectionMode ? "COLLECTING DATA" : "USING SAVED DATA", 16, Font.BOLD);
-        recordingLabel.setForeground(isDataCollectionMode ? CAUTION_COLOR : INFO_COLOR);
-
-        // Add components to panel
-        speedometerPanel.add(Box.createVerticalStrut(10));
-        speedometerPanel.add(timeTitle);
-        speedometerPanel.add(currentTimeLabel);
-        speedometerPanel.add(Box.createVerticalStrut(30));
-        speedometerPanel.add(speedTitle);
-        speedometerPanel.add(speedLabel);
-        speedometerPanel.add(Box.createVerticalStrut(30));
-        speedometerPanel.add(segmentTitle);
-        speedometerPanel.add(segmentTypeLabel);
-        speedometerPanel.add(Box.createVerticalStrut(50));
-        speedometerPanel.add(recordingLabel);
-    }
-
-    /**
-     * Create the segment info panel showing upcoming segment details
-     */
-    private void createSegmentInfoPanel() {
-        segmentInfoPanel = new JPanel();
-        segmentInfoPanel.setLayout(new BoxLayout(segmentInfoPanel, BoxLayout.Y_AXIS));
-        segmentInfoPanel.setBackground(BACKGROUND_COLOR);
-        segmentInfoPanel.setPreferredSize(new Dimension(200, WINDOW_HEIGHT - 80));
-        segmentInfoPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        // Next segment label
+        // Next segment type
         JLabel nextSegmentTitle = createLabel("Next Segment", 14, Font.BOLD);
         nextSegmentTitle.setForeground(TEXT_COLOR);
         nextSegmentLabel = createLabel("Unknown", 18, Font.PLAIN);
@@ -207,27 +203,42 @@ public class ADASInterface extends JFrame {
         curveDirectionLabel = createLabel("-", 18, Font.PLAIN);
         curveDirectionLabel.setForeground(INFO_COLOR);
 
+        // Recording status
+        recordingLabel = createLabel(isDataCollectionMode ? "COLLECTING DATA" : "USING SAVED DATA", 16, Font.BOLD);
+        recordingLabel.setForeground(isDataCollectionMode ? CAUTION_COLOR : INFO_COLOR);
+
         // Add components to panel
-        segmentInfoPanel.add(Box.createVerticalStrut(10));
-        segmentInfoPanel.add(nextSegmentTitle);
-        segmentInfoPanel.add(nextSegmentLabel);
-        segmentInfoPanel.add(Box.createVerticalStrut(30));
-        segmentInfoPanel.add(directionTitle);
-        segmentInfoPanel.add(curveDirectionLabel);
+        infoPanel.add(Box.createVerticalStrut(10));
+        infoPanel.add(timeTitle);
+        infoPanel.add(currentTimeLabel);
+        infoPanel.add(Box.createVerticalStrut(30));
+        infoPanel.add(speedTitle);
+        infoPanel.add(speedLabel);
+        infoPanel.add(Box.createVerticalStrut(30));
+        infoPanel.add(segmentTitle);
+        infoPanel.add(segmentTypeLabel);
+        infoPanel.add(Box.createVerticalStrut(30));
+        infoPanel.add(nextSegmentTitle);
+        infoPanel.add(nextSegmentLabel);
+        infoPanel.add(Box.createVerticalStrut(30));
+        infoPanel.add(directionTitle);
+        infoPanel.add(curveDirectionLabel);
+        infoPanel.add(Box.createVerticalStrut(50));
+        infoPanel.add(recordingLabel);
     }
 
     /**
-     * Create the map panel showing a visual representation of the road
+     * Create the steering wheel panel for visual representation
      */
-    private void createMapPanel() {
-        mapPanel = new JPanel() {
+    private void createSteeringPanel() {
+        steeringPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                drawMap(g);
+                drawSteeringWheel(g);
             }
         };
-        mapPanel.setBackground(BACKGROUND_COLOR);
+        steeringPanel.setBackground(BACKGROUND_COLOR);
     }
 
     /**
@@ -246,19 +257,26 @@ public class ADASInterface extends JFrame {
     }
 
     /**
-     * Draw the map visualization
+     * Draw a simplified steering wheel with direction indicators
      * 
      * @param g Graphics context
      */
-    private void drawMap(Graphics g) {
+    private void drawSteeringWheel(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        int width = mapPanel.getWidth();
-        int height = mapPanel.getHeight();
+        int width = steeringPanel.getWidth();
+        int height = steeringPanel.getHeight();
+        int centerX = width / 2;
+        int centerY = height / 2;
 
-        // Draw grid lines
-        g2d.setColor(new Color(50, 50, 60));
+        // Size of the steering wheel
+        int wheelSize = Math.min(width, height) - 100;
+        int wheelX = centerX - wheelSize / 2;
+        int wheelY = centerY - wheelSize / 2;
+
+        // Draw background grid
+        g2d.setColor(new Color(40, 40, 50));
         for (int i = 0; i < width; i += 50) {
             g2d.drawLine(i, 0, i, height);
         }
@@ -266,176 +284,173 @@ public class ADASInterface extends JFrame {
             g2d.drawLine(0, i, width, i);
         }
 
-        // Draw current road
-        int roadWidth = 60;
-        int centerX = width / 2;
-        int centerY = height / 2;
+        // Draw the steering wheel with rotation based on current steering angle
+        // Maximum rotation is 90 degrees in each direction
+        double rotationAngle = Math.toRadians(Math.min(90, Math.max(-90, currentSteeringAngle)));
 
-        // Draw the road based on current segment type
-        if (currentSegmentType == SegmentDetector.SegmentType.CURVE) {
-            drawCurvedRoad(g2d, centerX, centerY, roadWidth);
-        } else {
-            drawStraightRoad(g2d, centerX, centerY, roadWidth);
-        }
+        // Save the current transform
+        AffineTransform oldTransform = g2d.getTransform();
 
-        // Draw vehicle position
-        drawVehicle(g2d, centerX, centerY + 100);
+        // Translate and rotate around the center of the wheel
+        g2d.translate(centerX, centerY);
+        g2d.rotate(rotationAngle);
+        g2d.translate(-centerX, -centerY);
 
-        // Draw upcoming segment if available
+        // Draw the wheel outline
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.fillOval(wheelX, wheelY, wheelSize, wheelSize);
+
+        // Draw the wheel rim
+        g2d.setColor(Color.GRAY);
+        g2d.setStroke(new BasicStroke(15));
+        g2d.drawOval(wheelX, wheelY, wheelSize, wheelSize);
+
+        // Draw spokes
+        g2d.setColor(Color.LIGHT_GRAY);
+        g2d.setStroke(new BasicStroke(10, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+        // Horizontal spoke
+        g2d.drawLine(wheelX, centerY, wheelX + wheelSize, centerY);
+
+        // Vertical spoke
+        g2d.drawLine(centerX, wheelY, centerX, wheelY + wheelSize);
+
+        // Draw center hub
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.fillOval(centerX - 40, centerY - 40, 80, 80);
+
+        // Reset transform
+        g2d.setTransform(oldTransform);
+
+        // Draw the distance indicator if we have an upcoming segment
         if (upcomingSegment != null && !isDataCollectionMode) {
-            drawUpcomingSegment(g2d, width, height, upcomingSegment);
+            drawDistanceIndicator(g2d, centerX, centerY - wheelSize / 2 - 60, distanceToSegment);
+
+            // Draw warning sign if close to a curve
+            if (upcomingSegment.getType() == SegmentDetector.SegmentType.CURVE &&
+                    distanceToSegment <= IMMEDIATE_WARNING_DISTANCE && showAlert) {
+                drawWarningSign(g2d, centerX, centerY);
+            }
         }
+
+        // Draw direction indicator for current segment
+        drawDirectionIndicator(g2d, centerX, centerY + wheelSize / 2 + 60);
     }
 
     /**
-     * Draw a straight road section
+     * Draw a distance indicator showing how far to the next segment
      * 
-     * @param g2d       Graphics context
-     * @param centerX   Center X position
-     * @param centerY   Center Y position
-     * @param roadWidth Width of the road
+     * @param g2d      Graphics context
+     * @param x        Center X position
+     * @param y        Top Y position
+     * @param distance Distance in meters
      */
-    private void drawStraightRoad(Graphics2D g2d, int centerX, int centerY, int roadWidth) {
-        // Draw road outline
-        g2d.setColor(new Color(80, 80, 90));
-        g2d.fillRect(centerX - roadWidth / 2, 0, roadWidth, mapPanel.getHeight());
+    private void drawDistanceIndicator(Graphics2D g2d, int x, int y, double distance) {
+        int width = 200;
+        int height = 40;
 
-        // Draw centerline
-        g2d.setColor(Color.YELLOW);
-        g2d.setStroke(new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 0, new float[] { 15, 15 }, 0));
-        g2d.drawLine(centerX, 0, centerX, mapPanel.getHeight());
+        // Choose color based on distance and segment type
+        Color bgColor;
+        if (upcomingSegment.getType() == SegmentDetector.SegmentType.CURVE) {
+            if (distance <= IMMEDIATE_WARNING_DISTANCE) {
+                bgColor = WARNING_COLOR;
+            } else if (distance <= APPROACHING_WARNING_DISTANCE) {
+                bgColor = CAUTION_COLOR;
+            } else {
+                bgColor = CURVE_COLOR;
+            }
+        } else {
+            bgColor = STRAIGHT_COLOR;
+        }
 
-        // Draw edge lines
+        // Draw background
+        g2d.setColor(bgColor);
+        g2d.fillRoundRect(x - width / 2, y, width, height, 10, 10);
+
+        // Draw border
         g2d.setColor(Color.WHITE);
         g2d.setStroke(new BasicStroke(2));
-        g2d.drawLine(centerX - roadWidth / 2, 0, centerX - roadWidth / 2, mapPanel.getHeight());
-        g2d.drawLine(centerX + roadWidth / 2, 0, centerX + roadWidth / 2, mapPanel.getHeight());
+        g2d.drawRoundRect(x - width / 2, y, width, height, 10, 10);
+
+        // Draw text
+        g2d.setFont(new Font("Arial", Font.BOLD, 20));
+        g2d.setColor(Color.WHITE);
+
+        String text = df.format(distance) + " m";
+        int textWidth = g2d.getFontMetrics().stringWidth(text);
+        g2d.drawString(text, x - textWidth / 2, y + height - 12);
     }
 
     /**
-     * Draw a curved road section
-     * 
-     * @param g2d       Graphics context
-     * @param centerX   Center X position
-     * @param centerY   Center Y position
-     * @param roadWidth Width of the road
-     */
-    private void drawCurvedRoad(Graphics2D g2d, int centerX, int centerY, int roadWidth) {
-        // Determine curve direction
-        boolean curveRight = upcomingSegment != null &&
-                upcomingSegment.getCurveDirection() != null &&
-                upcomingSegment.getCurveDirection().equals("right");
-
-        // Draw curve
-        int curveRadius = 200;
-        int startAngle = 180;
-        int arcAngle = 90;
-
-        // Adjust position based on direction
-        int curveX = curveRight ? centerX - curveRadius : centerX - curveRadius + roadWidth;
-
-        // Draw road outline
-        g2d.setColor(new Color(80, 80, 90));
-        g2d.fillArc(curveX, centerY - curveRadius,
-                2 * curveRadius, 2 * curveRadius,
-                startAngle, arcAngle);
-
-        g2d.fillArc(curveX - roadWidth, centerY - curveRadius,
-                2 * curveRadius, 2 * curveRadius,
-                startAngle, arcAngle);
-
-        // Draw straight section before curve
-        drawStraightRoad(g2d, centerX, centerY + 200, roadWidth);
-    }
-
-    /**
-     * Draw the vehicle on the map
+     * Draw a warning sign for immediate curve warnings
      * 
      * @param g2d Graphics context
-     * @param x   X position
-     * @param y   Y position
+     * @param x   Center X position
+     * @param y   Center Y position
      */
-    private void drawVehicle(Graphics2D g2d, int x, int y) {
-        // Draw vehicle as a triangle pointing up
-        int vehicleSize = 20;
-        int[] xPoints = { x, x - vehicleSize, x + vehicleSize };
-        int[] yPoints = { y - vehicleSize, y + vehicleSize, y + vehicleSize };
+    private void drawWarningSign(Graphics2D g2d, int x, int y) {
+        int size = 80;
 
-        g2d.setColor(Color.WHITE);
+        // Draw red triangle warning sign
+        int[] xPoints = { x, x - size / 2, x + size / 2 };
+        int[] yPoints = { y - size / 2, y + size / 2, y + size / 2 };
+
+        g2d.setColor(WARNING_COLOR);
         g2d.fillPolygon(xPoints, yPoints, 3);
 
-        g2d.setColor(Color.BLACK);
-        g2d.setStroke(new BasicStroke(2));
+        g2d.setColor(Color.WHITE);
+        g2d.setStroke(new BasicStroke(3));
         g2d.drawPolygon(xPoints, yPoints, 3);
+
+        // Draw exclamation mark
+        g2d.setFont(new Font("Arial", Font.BOLD, 40));
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth("!");
+        int textHeight = fm.getHeight();
+        g2d.drawString("!", x - textWidth / 2, y + textHeight / 4);
     }
 
     /**
-     * Draw the upcoming segment on the map
+     * Draw a direction indicator showing the type of current segment
      * 
-     * @param g2d     Graphics context
-     * @param width   Panel width
-     * @param height  Panel height
-     * @param segment Upcoming segment
+     * @param g2d Graphics context
+     * @param x   Center X position
+     * @param y   Center Y position
      */
-    private void drawUpcomingSegment(Graphics2D g2d, int width, int height, SegmentData segment) {
-        int y = 100; // Distance from top
+    private void drawDirectionIndicator(Graphics2D g2d, int x, int y) {
+        int width = 150;
+        int height = 40;
 
-        // Set color based on segment type
-        g2d.setColor(segment.getType() == SegmentDetector.SegmentType.CURVE ? CURVE_COLOR : STRAIGHT_COLOR);
+        // Choose color and text based on segment type
+        Color bgColor;
+        String text;
 
-        // Draw segment representation
-        if (segment.getType() == SegmentDetector.SegmentType.CURVE) {
-            // Draw curve icon
-            int iconSize = 80;
-            boolean curveRight = segment.getCurveDirection() != null &&
-                    segment.getCurveDirection().equals("right");
-
-            int x = width / 2 - iconSize / 2;
-
-            g2d.setStroke(new BasicStroke(5));
-            if (curveRight) {
-                g2d.drawArc(x, y, iconSize, iconSize, 180, 90);
-                // Draw arrow
-                int[] xPoints = { x + iconSize, x + iconSize - 15, x + iconSize - 5 };
-                int[] yPoints = { y + iconSize / 2, y + iconSize / 2 - 10, y + iconSize / 2 + 10 };
-                g2d.fillPolygon(xPoints, yPoints, 3);
-            } else {
-                g2d.drawArc(x, y, iconSize, iconSize, 270, 90);
-                // Draw arrow
-                int[] xPoints = { x, x + 15, x + 5 };
-                int[] yPoints = { y + iconSize / 2, y + iconSize / 2 - 10, y + iconSize / 2 + 10 };
-                g2d.fillPolygon(xPoints, yPoints, 3);
-            }
-
-            // Display distance
-            String distanceText = df.format(distanceToSegment) + " m";
-            g2d.setFont(new Font("Arial", Font.BOLD, 20));
-            g2d.drawString(distanceText, width / 2 - 40, y + iconSize + 30);
-
-            // Display curve degree
-            String degreeText = df.format(segment.getCurveDegrees()) + "°";
-            g2d.setFont(new Font("Arial", Font.PLAIN, 16));
-            g2d.drawString(degreeText, width / 2 - 20, y + iconSize + 60);
+        if (currentSegmentType == SegmentDetector.SegmentType.CURVE) {
+            bgColor = CURVE_COLOR;
+            text = "CURVE";
+        } else if (currentSegmentType == SegmentDetector.SegmentType.STRAIGHT) {
+            bgColor = STRAIGHT_COLOR;
+            text = "STRAIGHT";
         } else {
-            // Draw straight segment icon
-            int iconWidth = 60;
-            int iconHeight = 120;
-            int x = width / 2 - iconWidth / 2;
-
-            g2d.fillRect(x, y, iconWidth, iconHeight);
-
-            // Draw lane markings
-            g2d.setColor(Color.WHITE);
-            g2d.setStroke(
-                    new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 0, new float[] { 10, 10 }, 0));
-            g2d.drawLine(width / 2, y, width / 2, y + iconHeight);
-
-            // Display distance
-            g2d.setColor(STRAIGHT_COLOR);
-            String distanceText = df.format(distanceToSegment) + " m";
-            g2d.setFont(new Font("Arial", Font.BOLD, 20));
-            g2d.drawString(distanceText, width / 2 - 40, y + iconHeight + 30);
+            bgColor = Color.GRAY;
+            text = "UNKNOWN";
         }
+
+        // Draw background
+        g2d.setColor(bgColor);
+        g2d.fillRoundRect(x - width / 2, y, width, height, 10, 10);
+
+        // Draw border
+        g2d.setColor(Color.WHITE);
+        g2d.setStroke(new BasicStroke(2));
+        g2d.drawRoundRect(x - width / 2, y, width, height, 10, 10);
+
+        // Draw text
+        g2d.setFont(new Font("Arial", Font.BOLD, 20));
+        g2d.setColor(Color.WHITE);
+
+        int textWidth = g2d.getFontMetrics().stringWidth(text);
+        g2d.drawString(text, x - textWidth / 2, y + height - 12);
     }
 
     /**
@@ -475,7 +490,7 @@ public class ADASInterface extends JFrame {
         }
 
         // Repaint for updated vehicle data
-        repaint();
+        steeringPanel.repaint();
     }
 
     /**
@@ -500,19 +515,19 @@ public class ADASInterface extends JFrame {
 
             // Update direction label for curves
             if (isCurve && segment.getCurveDirection() != null) {
-                curveDirectionLabel.setText(segment.getCurveDirection().toUpperCase());
-
-                // Determine arrow direction
-                String arrow = segment.getCurveDirection().equals("right") ? "→" : "←";
-                curveDirectionLabel.setText(arrow + " " + segment.getCurveDirection().toUpperCase() + " " + arrow);
+                String direction = segment.getCurveDirection();
+                String arrow = direction.equals("right") ? "→" : "←";
+                curveDirectionLabel.setText(arrow + " " + direction.toUpperCase() + " " + arrow);
+                curveDirectionLabel.setForeground(isCurve ? CURVE_COLOR : STRAIGHT_COLOR);
             } else {
                 curveDirectionLabel.setText("-");
+                curveDirectionLabel.setForeground(TEXT_COLOR);
             }
 
             // Update warning label based on distance and segment type
             if (isCurve) {
                 if (distance <= IMMEDIATE_WARNING_DISTANCE) {
-                    warningLabel.setText("CURVE IMMINENT!");
+                    warningLabel.setText("⚠️ CURVE IMMINENT! ⚠️");
                     warningLabel.setForeground(WARNING_COLOR);
                 } else if (distance <= APPROACHING_WARNING_DISTANCE) {
                     warningLabel.setText("APPROACHING CURVE");
@@ -540,6 +555,6 @@ public class ADASInterface extends JFrame {
         }
 
         // Repaint for updated ADAS data
-        repaint();
+        steeringPanel.repaint();
     }
 }

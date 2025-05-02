@@ -416,6 +416,7 @@ public class ReceiverEnhanced {
 
         // Detect segment type using the detector
         SegmentDetector.SegmentType currentType = segmentDetector.updateAndDetect(yawRate, steeringAngle);
+        SegmentDetector.CurveDirection curveDir = segmentDetector.getCurveDirection();
 
         // Check if segment type has changed
         if (lastSegmentType != null && currentType != lastSegmentType) {
@@ -431,13 +432,34 @@ public class ReceiverEnhanced {
 
             // Start a new segment
             currentSegment = new SegmentData(currentType, currentSimTime, currentGPS, lastHeading);
+
+            // Set curve direction if we're entering a curve
+            if (currentType == SegmentDetector.SegmentType.CURVE && curveDir != SegmentDetector.CurveDirection.NONE) {
+                currentSegment.setCurveDirection(curveDir == SegmentDetector.CurveDirection.LEFT ? "left" : "right");
+            }
         } else if (lastSegmentType == null) {
             // First segment, start it
             currentSegment = new SegmentData(currentType, currentSimTime, currentGPS, lastHeading);
+
+            // Set curve direction if it's a curve
+            if (currentType == SegmentDetector.SegmentType.CURVE && curveDir != SegmentDetector.CurveDirection.NONE) {
+                currentSegment.setCurveDirection(curveDir == SegmentDetector.CurveDirection.LEFT ? "left" : "right");
+            }
+        } else if (currentType == SegmentDetector.SegmentType.CURVE &&
+                curveDir != SegmentDetector.CurveDirection.NONE &&
+                currentSegment != null) {
+            // Update curve direction continually during a curve (in case it changes)
+            currentSegment.setCurveDirection(curveDir == SegmentDetector.CurveDirection.LEFT ? "left" : "right");
         }
 
         // Update the current segment with sensor data
         if (currentSegment != null) {
+            // Always add GPS coordinate to track the path
+            currentSegment.addGPSCoordinate(currentGPS);
+
+            // Add heading for trajectory calculation
+            currentSegment.addHeading(lastHeading);
+
             // Always add speed value for all segment types
             currentSegment.addSpeedValue(vehicleSpeed);
 
