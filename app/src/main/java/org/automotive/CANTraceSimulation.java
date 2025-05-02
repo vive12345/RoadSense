@@ -501,7 +501,6 @@ public class CANTraceSimulation {
 
                 // Send GPS data
                 sendGPSData(out, nextGPS);
-                System.out.println("Sent GPS data at offset: " + nextGPSTimeMs + " ms");
 
                 // Update simulation time to match the sent GPS time
                 simTimeMs = nextGPSTimeMs;
