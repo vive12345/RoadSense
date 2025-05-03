@@ -5,14 +5,9 @@ package org.automotive;
  * for the ADAS Curve Warning System.
  */
 public class ReceiverWithHMI extends ReceiverEnhanced {
-    // HMI Interface
+
     private ADASInterface adasInterface;
 
-    /**
-     * Main method to run the Receiver application with HMI
-     * 
-     * @param args Command line arguments (not used)
-     */
     public static void main(String[] args) {
         ReceiverWithHMI receiver = new ReceiverWithHMI();
         receiver.runMultipleSimulations();
@@ -41,16 +36,15 @@ public class ReceiverWithHMI extends ReceiverEnhanced {
      * Initialize the HMI interface
      */
     private void initializeHMI() {
-        // Create new ADAS Interface with current run status
+
         adasInterface = new ADASInterface(isFirstRun);
     }
 
     @Override
     protected void processAdditionalData() {
-        // First perform segment detection (from parent class)
+
         super.processAdditionalData();
 
-        // Then update ADAS info for the HMI
         updateADASInfo();
     }
 
@@ -58,7 +52,7 @@ public class ReceiverWithHMI extends ReceiverEnhanced {
      * Updates the ADAS information for the HMI
      */
     private void updateADASInfo() {
-        // Update vehicle data in the HMI
+
         if (adasInterface != null) {
             adasInterface.updateVehicleData(
                     vehicleSpeed,
@@ -69,20 +63,15 @@ public class ReceiverWithHMI extends ReceiverEnhanced {
                     lastSegmentType,
                     currentSimTime);
 
-            // Update ADAS warnings if we have saved segment data
             if (!isFirstRun && curveWarningAssist != null && currentGPS != null) {
-                // Get the ADAS warning message
-                String adasMessage = curveWarningAssist.update(currentGPS, currentSimTime);
 
-                // Get the current upcoming segment and distance
                 if (curveWarningAssist.hasUpcomingSegment()) {
                     SegmentData upcomingSegment = curveWarningAssist.getUpcomingSegment();
                     double distance = curveWarningAssist.getDistanceToUpcomingSegment();
 
-                    // Update the HMI with this information
                     adasInterface.updateADASWarning(upcomingSegment, distance);
                 } else {
-                    // No upcoming segment
+
                     adasInterface.updateADASWarning(null, Double.MAX_VALUE);
                 }
             }

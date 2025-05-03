@@ -8,24 +8,18 @@ import java.util.List;
  * Enhanced Receiver that adds road segment detection and data extraction.
  */
 public class ReceiverEnhanced extends ReceiverBase {
-    // Segment detection related objects
     protected SegmentDetector segmentDetector = new SegmentDetector();
     protected SegmentCollection segments = new SegmentCollection();
     protected SegmentData currentSegment = null;
     protected SegmentDetector.SegmentType lastSegmentType = null;
-    protected double lastHeading = 0.0; // Track vehicle heading
+    protected double lastHeading = 0.0;
     protected List<GPScoordinates> gpsBuffer = new ArrayList<>(); // Buffer for heading calculation
 
     // For ADAS
-    protected SegmentCollection savedSegments = null; // Segments from previous run
-    protected CurveWarningAssist curveWarningAssist = null; // ADAS system
+    protected SegmentCollection savedSegments = null;
+    protected CurveWarningAssist curveWarningAssist = null;
     protected boolean isFirstRun = true;
 
-    /**
-     * Main method to run the Enhanced Receiver application
-     * 
-     * @param args Command line arguments (not used)
-     */
     public static void main(String[] args) {
         ReceiverEnhanced receiver = new ReceiverEnhanced();
         receiver.runMultipleSimulations();
@@ -69,15 +63,13 @@ public class ReceiverEnhanced extends ReceiverBase {
     protected void processGPSMessage(String[] parts) {
         super.processGPSMessage(parts);
 
-        // Additional GPS processing for heading calculation
         if (currentGPS != null) {
-            // Add to GPS buffer for heading calculation
+
             gpsBuffer.add(currentGPS);
             if (gpsBuffer.size() > 2) {
-                gpsBuffer.remove(0); // Keep only the 2 most recent coordinates
+                gpsBuffer.remove(0);
             }
 
-            // Calculate heading if we have at least 2 GPS points
             if (gpsBuffer.size() >= 2) {
                 GPScoordinates prev = gpsBuffer.get(0);
                 GPScoordinates curr = gpsBuffer.get(1);
@@ -102,16 +94,14 @@ public class ReceiverEnhanced extends ReceiverBase {
 
     @Override
     protected void afterSimulation() {
-        // After the simulation, save segments for future runs
+
         if (isFirstRun && segments.size() > 0) {
             savedSegments = segments;
             isFirstRun = false;
             System.out.println("\nSegment data saved for future runs. Detected " + segments.size() + " segments.");
 
-            // Print detailed segment data after first run
             segments.print();
 
-            // Initialize Curve Warning Assist for future runs
             curveWarningAssist = new CurveWarningAssist(savedSegments);
         }
     }
@@ -123,16 +113,14 @@ public class ReceiverEnhanced extends ReceiverBase {
         // Get current segment type
         String segmentStr = (lastSegmentType != null) ? lastSegmentType.toString() : "-";
 
-        // Get ADAS information if we have saved segments from a previous run
         String adasInfo = "";
         if (!isFirstRun && curveWarningAssist != null && currentGPS != null) {
-            // Update the ADAS system with current position and get warning
+
             adasInfo = curveWarningAssist.update(currentGPS, currentSimTime);
         } else {
             adasInfo = "ADAS: Data collection in progress";
         }
 
-        // Create the display line with proper spacing
         String displayLine;
         if (isFirstRun) {
             displayLine = String.format("\r%-14s | %-13s | %-10s | %-9s | %-10s | %-11s | %-25s | %s",
@@ -155,31 +143,24 @@ public class ReceiverEnhanced extends ReceiverBase {
      * Detect road segments based on sensor data and extract segment-specific data
      */
     protected void detectSegment() {
-        // Only start detection when we have all necessary sensor data
+
         if (steeringAngleStr.equals("-") || yawRateStr.equals("-") || currentGPS == null) {
             return;
         }
-
-        // Detect segment type using the detector
         SegmentDetector.SegmentType currentType = segmentDetector.updateAndDetect(yawRate, steeringAngle);
         SegmentDetector.CurveDirection curveDir = segmentDetector.getCurveDirection();
 
-        // Check if segment type has changed
         if (lastSegmentType != null && currentType != lastSegmentType) {
-            // Segment type changed, finalize the current segment
+
             if (currentSegment != null) {
-                // Always add GPS coordinate to track the path
+
                 currentSegment.addGPSCoordinate(currentGPS);
 
-                // Add heading for trajectory calculation
                 currentSegment.addHeading(lastHeading);
                 finalizeCurrentSegment();
             }
 
-            // Start a new segment
             currentSegment = new SegmentData(currentType, currentSimTime, currentGPS, lastHeading);
-
-            // Set curve direction if we're entering a curve
             if (currentType == SegmentDetector.SegmentType.CURVE && curveDir != SegmentDetector.CurveDirection.NONE) {
                 currentSegment.setCurveDirection(curveDir == SegmentDetector.CurveDirection.LEFT ? "left" : "right");
             }
@@ -198,31 +179,24 @@ public class ReceiverEnhanced extends ReceiverBase {
             currentSegment.setCurveDirection(curveDir == SegmentDetector.CurveDirection.LEFT ? "left" : "right");
         }
 
-        // Update the current segment with sensor data
         if (currentSegment != null) {
-            // Always add GPS coordinate to track the path
+
             currentSegment.addGPSCoordinate(currentGPS);
 
-            // Add heading for trajectory calculation
             currentSegment.addHeading(lastHeading);
 
-            // Always add speed value for all segment types
             currentSegment.addSpeedValue(vehicleSpeed);
 
-            // Add acceleration data based on segment type
             if (currentType == SegmentDetector.SegmentType.STRAIGHT) {
-                // For straight segments, track longitudinal acceleration
+
                 currentSegment.addLongitudinalAcceleration(longAccel);
             } else {
-                // For curves, track lateral acceleration
                 currentSegment.addLateralAcceleration(latAccel);
             }
 
-            // Add yaw rate data (especially important for curves)
             currentSegment.addYawRateValue(yawRate);
         }
 
-        // Update last segment type
         lastSegmentType = currentType;
     }
 
@@ -232,17 +206,13 @@ public class ReceiverEnhanced extends ReceiverBase {
      */
     protected void finalizeCurrentSegment() {
         if (currentSegment != null && currentGPS != null) {
-            // Finalize segment with current GPS and heading
-            currentSegment.finalizeSegment(currentSimTime, currentGPS, lastHeading);
 
-            // Add to segment collection
+            currentSegment.finalizeSegment(currentSimTime, currentGPS, lastHeading);
             segments.addSegment(currentSegment);
 
-            // Print information about the new segment
             System.out.println(
                     "\nDetected new " + currentSegment.getType() + " segment. Total segments: " + segments.size());
 
-            // Reset current segment
             currentSegment = null;
         }
     }

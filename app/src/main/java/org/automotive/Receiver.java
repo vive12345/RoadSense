@@ -1,7 +1,5 @@
 package org.automotive;
 
-import java.text.DecimalFormat;
-
 /**
  * Basic Receiver implementation that displays real-time sensor data
  * from the CAN trace simulation.

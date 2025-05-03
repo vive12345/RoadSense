@@ -4,7 +4,6 @@ import org.automotive.utils.MathUtils;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Arrays;
 
 /**
  * Enhanced SegmentDetector with improved curve direction detection and

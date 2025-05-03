@@ -1,7 +1,6 @@
 package org.automotive;
 
 import java.io.*;
-import java.util.*; // ununsed remove it after testing
 
 public class GPSParser {
 

@@ -7,7 +7,6 @@ import java.util.List;
  * Utility class for GPS-related calculations.
  */
 public class GPSUtils {
-    // Earth radius in meters - used for distance calculations
     private static final double EARTH_RADIUS = 6371000;
 
     private GPSUtils() {
@@ -17,12 +16,6 @@ public class GPSUtils {
     /**
      * Calculate the distance between two GPS coordinates using the Haversine
      * formula
-     * 
-     * @param lat1 Latitude of first point (degrees)
-     * @param lng1 Longitude of first point (degrees)
-     * @param lat2 Latitude of second point (degrees)
-     * @param lng2 Longitude of second point (degrees)
-     * @return Distance in meters
      */
     public static double calculateDistance(double lat1, double lng1, double lat2, double lng2) {
         double lat1Rad = Math.toRadians(lat1);
@@ -44,10 +37,6 @@ public class GPSUtils {
 
     /**
      * Calculate the distance between two GPS coordinates
-     * 
-     * @param pos1 First GPS coordinates
-     * @param pos2 Second GPS coordinates
-     * @return Distance in meters
      */
     public static double calculateDistance(GPScoordinates pos1, GPScoordinates pos2) {
         return calculateDistance(
@@ -57,10 +46,6 @@ public class GPSUtils {
 
     /**
      * Calculate the heading between two GPS coordinates
-     * 
-     * @param from Starting GPS coordinates
-     * @param to   Ending GPS coordinates
-     * @return Heading in degrees (0-360, where 0 is North)
      */
     public static double calculateHeading(GPScoordinates from, GPScoordinates to) {
         double fromLat = Math.toRadians(from.getLatitude());
@@ -81,9 +66,6 @@ public class GPSUtils {
 
     /**
      * Calculate the total heading change in degrees
-     * 
-     * @param headings List of headings in degrees
-     * @return Total heading change in degrees
      */
     public static double calculateTotalHeadingChange(List<Double> headings) {
         if (headings == null || headings.size() < 2) {
@@ -96,7 +78,6 @@ public class GPSUtils {
             double curr = headings.get(i);
             double diff = Math.abs(curr - prev);
 
-            // Normalize difference (for the 0/360 crossing)
             if (diff > 180) {
                 diff = 360 - diff;
             }

@@ -49,21 +49,21 @@ public class ADASInterface extends JFrame {
     private JLabel currentTimeLabel;
 
     // Current data values
-    private double currentSpeed = 0;
-    private double currentYawRate = 0;
+    // private double currentSpeed = 0;
+    // private double currentYawRate = 0;
     private double currentSteeringAngle = 0;
-    private double currentLateralAccel = 0;
-    private double currentLongAccel = 0;
+    // private double currentLateralAccel = 0;
+    // private double currentLongAccel = 0;
     private SegmentDetector.SegmentType currentSegmentType = null;
     private SegmentData upcomingSegment = null;
     private double distanceToSegment = Double.MAX_VALUE;
     private boolean isDataCollectionMode = true;
-    private double simulationTime = 0;
+    // private double simulationTime = 0;
 
     // Alert icon state
     private boolean showAlert = false;
     private long alertStartTime = 0;
-    private static final long ALERT_BLINK_INTERVAL = 500; // milliseconds
+    private static final long ALERT_BLINK_INTERVAL = 500;
 
     // Alert sound and vibration control
     private boolean isAlertActive = false;
@@ -76,25 +76,19 @@ public class ADASInterface extends JFrame {
 
     /**
      * Constructor for the ADAS Interface
-     * 
-     * @param isFirstRun Whether this is the first run (data collection mode)
      */
     public ADASInterface(boolean isFirstRun) {
         this.isDataCollectionMode = isFirstRun;
 
-        // Initialize thread pool for alerts
         this.executorService = Executors.newScheduledThreadPool(2);
 
-        // Prepare the audio system with loud alert sound
         prepareAudioSystem();
 
-        // Set up the window
         setTitle("ADAS Curve Warning System");
         setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null); // Center on screen
 
-        // Handle window closing event
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -109,13 +103,10 @@ public class ADASInterface extends JFrame {
             }
         });
 
-        // Initialize UI
         initializeUI();
 
-        // Make visible
         setVisible(true);
 
-        // Start the alert blink timer
         startAlertTimer();
     }
 
@@ -124,24 +115,18 @@ public class ADASInterface extends JFrame {
      */
     private void prepareAudioSystem() {
         try {
-            // Create a higher amplitude dual-tone for maximum loudness
-            // This combines two frequencies for a more attention-grabbing sound
+
             AudioFormat format = new AudioFormat(44100, 16, 1, true, false);
 
-            // Create an audio stream with a loud dual-tone alarm sound
-            // Using 2 seconds of audio for a longer alert
             byte[] buffer = new byte[44100 * 2];
 
             for (int i = 0; i < buffer.length; i++) {
-                // Combine two frequencies: 880Hz and 1760Hz with maximum amplitude
-                double angle1 = 2.0 * Math.PI * i / (44100 / 880.0); // 880Hz tone
-                double angle2 = 2.0 * Math.PI * i / (44100 / 1760.0); // 1760Hz tone (one octave higher)
 
-                // Use near-maximum amplitude (32767 is max for 16-bit audio)
-                // Scale to 90% of maximum to avoid distortion
+                double angle1 = 2.0 * Math.PI * i / (44100 / 880.0);
+                double angle2 = 2.0 * Math.PI * i / (44100 / 1760.0);
+
                 short sample = (short) (Math.sin(angle1) * 15000 + Math.sin(angle2) * 15000);
 
-                // Pack the sample into two bytes (little endian)
                 buffer[i] = (byte) (sample & 0xFF);
                 i++;
                 if (i < buffer.length) {
@@ -158,10 +143,9 @@ public class ADASInterface extends JFrame {
                         format, buffer.length / format.getFrameSize());
                 alarmClip.open(ais);
 
-                // Set volume to maximum
                 if (alarmClip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
                     FloatControl gainControl = (FloatControl) alarmClip.getControl(FloatControl.Type.MASTER_GAIN);
-                    // Set gain to maximum value (in decibels)
+
                     gainControl.setValue(gainControl.getMaximum());
                 }
             }
@@ -176,26 +160,20 @@ public class ADASInterface extends JFrame {
      */
     private void startAlertTimer() {
         Timer timer = new Timer(100, e -> {
-            // Update alert state every ALERT_BLINK_INTERVAL
             if (System.currentTimeMillis() - alertStartTime > ALERT_BLINK_INTERVAL) {
                 showAlert = !showAlert;
                 alertStartTime = System.currentTimeMillis();
-
-                // Check if we need to trigger alerts
                 if (upcomingSegment != null &&
                         upcomingSegment.getType() == SegmentDetector.SegmentType.CURVE &&
                         distanceToSegment <= IMMEDIATE_WARNING_DISTANCE) {
 
-                    // Only trigger alerts when blinking on and not already alerting
                     if (showAlert && !isAlertActive &&
                             System.currentTimeMillis() - lastAlertTime > ALERT_INTERVAL) {
                         triggerAlerts();
                     }
-
-                    // Always repaint for blinking effect
                     steeringPanel.repaint();
                 } else {
-                    // Stop any active alerts if we're no longer in warning state
+
                     stopAlerts();
                 }
             }
@@ -213,11 +191,9 @@ public class ADASInterface extends JFrame {
         isAlertActive = true;
         lastAlertTime = System.currentTimeMillis();
 
-        // Start both vibration and sound alerts in parallel
         playAlertSound();
         startVibration();
 
-        // Schedule the end of the alert status after 1 second
         executorService.schedule(() -> {
             isAlertActive = false;
         }, 1000, TimeUnit.MILLISECONDS);
@@ -237,13 +213,12 @@ public class ADASInterface extends JFrame {
 
     private void playAlertSound() {
         if (alarmClip != null) {
-            // Reset to beginning and play
+
             alarmClip.setFramePosition(0);
             alarmClip.start();
 
-            // Also use the system beep as a backup alert method
             try {
-                // Multiple beeps for added attention
+
                 for (int i = 0; i < 3; i++) {
                     final int delay = i * 200;
                     executorService.schedule(() -> {
@@ -251,28 +226,21 @@ public class ADASInterface extends JFrame {
                     }, delay, TimeUnit.MILLISECONDS);
                 }
             } catch (Exception e) {
-                // Fallback if beep fails
+
                 System.err.println("Error playing system beep: " + e.getMessage());
             }
-
-            // Announce the alert verbally (in a real system this would use TTS)
-            System.out.println("!!! LOUD AUDIO ALERT: CURVE AHEAD! REDUCE SPEED NOW! !!!");
+            System.out.println("==>>>>> CURVE AHEAD! REDUCE SPEED ===>>>");
         }
     }
 
-    // Start intense window vibration effect
-
     private void startVibration() {
-        // Get original position
+
         final Point originalLocation = getLocation();
-        final int vibrationIntensity = 8; // Higher pixels to move for stronger effect
+        final int vibrationIntensity = 8;
 
-        // Create stronger vibration by moving window back and forth rapidly in multiple
-        // directions
-        for (int i = 0; i < 10; i++) { // More iterations for longer effect
-            final int delay = i * 30; // milliseconds between movements (faster)
+        for (int i = 0; i < 10; i++) {
+            final int delay = i * 30;
 
-            // Move in multiple directions for more noticeable effect
             executorService.schedule(() -> {
                 setLocation(originalLocation.x + vibrationIntensity, originalLocation.y);
             }, delay, TimeUnit.MILLISECONDS);
@@ -302,21 +270,16 @@ public class ADASInterface extends JFrame {
         mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(BACKGROUND_COLOR);
 
-        // Create the warning panel (top)
         createWarningPanel();
 
-        // Create the info panel (left)
         createInfoPanel();
 
-        // Create the steering wheel panel (center)
         createSteeringPanel();
 
-        // Add panels to main panel
         mainPanel.add(warningPanel, BorderLayout.NORTH);
         mainPanel.add(infoPanel, BorderLayout.WEST);
         mainPanel.add(steeringPanel, BorderLayout.CENTER);
 
-        // Set the content pane
         setContentPane(mainPanel);
     }
 
@@ -347,19 +310,16 @@ public class ADASInterface extends JFrame {
         infoPanel.setPreferredSize(new Dimension(250, WINDOW_HEIGHT - 80));
         infoPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Simulation time
         JLabel timeTitle = createLabel("Simulation Time", 14, Font.BOLD);
         timeTitle.setForeground(TEXT_COLOR);
         currentTimeLabel = createLabel("0.0 ms", 18, Font.PLAIN);
         currentTimeLabel.setForeground(INFO_COLOR);
 
-        // Speed display
         JLabel speedTitle = createLabel("Current Speed", 14, Font.BOLD);
         speedTitle.setForeground(TEXT_COLOR);
         speedLabel = createLabel("0.0 km/h", 24, Font.BOLD);
         speedLabel.setForeground(INFO_COLOR);
 
-        // Current segment type
         JLabel segmentTitle = createLabel("Current Segment", 14, Font.BOLD);
         segmentTitle.setForeground(TEXT_COLOR);
         segmentTypeLabel = createLabel("Unknown", 18, Font.PLAIN);
@@ -377,11 +337,9 @@ public class ADASInterface extends JFrame {
         curveDirectionLabel = createLabel("-", 18, Font.PLAIN);
         curveDirectionLabel.setForeground(INFO_COLOR);
 
-        // Recording status
         recordingLabel = createLabel(isDataCollectionMode ? "COLLECTING DATA" : "USING SAVED DATA", 16, Font.BOLD);
         recordingLabel.setForeground(isDataCollectionMode ? CAUTION_COLOR : INFO_COLOR);
 
-        // Add components to panel
         infoPanel.add(Box.createVerticalStrut(10));
         infoPanel.add(timeTitle);
         infoPanel.add(currentTimeLabel);
@@ -422,11 +380,6 @@ public class ADASInterface extends JFrame {
 
     /**
      * Create a formatted JLabel with specified text, size, and style
-     * 
-     * @param text  The label text
-     * @param size  Font size
-     * @param style Font style (e.g. Font.BOLD)
-     * @return Configured JLabel
      */
     private JLabel createLabel(String text, int size, int style) {
         JLabel label = new JLabel(text);
@@ -437,8 +390,6 @@ public class ADASInterface extends JFrame {
 
     /**
      * Draw a simplified steering wheel with direction indicators
-     * 
-     * @param g Graphics context
      */
     private void drawSteeringWheel(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
@@ -518,11 +469,6 @@ public class ADASInterface extends JFrame {
 
     /**
      * Draw a distance indicator showing how far to the next segment
-     * 
-     * @param g2d      Graphics context
-     * @param x        Center X position
-     * @param y        Top Y position
-     * @param distance Distance in meters
      */
     private void drawDistanceIndicator(Graphics2D g2d, int x, int y, double distance) {
         int width = 200;
@@ -638,13 +584,13 @@ public class ADASInterface extends JFrame {
             double latAccel, double longAccel, SegmentDetector.SegmentType segmentType,
             double time) {
 
-        this.currentSpeed = speed;
+        // this.currentSpeed = speed;
         this.currentSteeringAngle = steeringAngle;
-        this.currentYawRate = yawRate;
-        this.currentLateralAccel = latAccel;
-        this.currentLongAccel = longAccel;
+        // this.currentYawRate = yawRate;
+        // this.currentLateralAccel = latAccel;
+        // this.currentLongAccel = longAccel;
         this.currentSegmentType = segmentType;
-        this.simulationTime = time;
+        // this.simulationTime = time;
 
         // Update the UI components
         speedLabel.setText(df.format(speed) + " km/h");

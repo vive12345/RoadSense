@@ -13,9 +13,6 @@ public class MathUtils {
 
     /**
      * Calculate the average of a list of values
-     * 
-     * @param values List of values
-     * @return Average value, or 0 if the list is empty
      */
     public static double calculateAverage(List<Double> values) {
         if (values == null || values.isEmpty()) {
@@ -32,9 +29,6 @@ public class MathUtils {
 
     /**
      * Find the maximum value in a list
-     * 
-     * @param values List of values
-     * @return Maximum value, or Double.MIN_VALUE if the list is empty
      */
     public static double findMax(List<Double> values) {
         if (values == null || values.isEmpty()) {
@@ -52,10 +46,7 @@ public class MathUtils {
     }
 
     /**
-     * Find the minimum value in a list
-     * 
-     * @param values List of values
-     * @return Minimum value, or Double.MAX_VALUE if the list is empty
+     * Find the minimum value in a lis
      */
     public static double findMin(List<Double> values) {
         if (values == null || values.isEmpty()) {
@@ -74,10 +65,6 @@ public class MathUtils {
 
     /**
      * Count maximum consecutive values over threshold
-     * 
-     * @param values    Array of values to check
-     * @param threshold Threshold to compare against
-     * @return Maximum number of consecutive values exceeding threshold
      */
     public static int countMaxConsecutiveOverThreshold(Double[] values, double threshold) {
         if (values == null || values.length == 0) {

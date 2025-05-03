@@ -50,21 +50,21 @@ tasks.named('test') {
 //     classpath = sourceSets.test.runtimeClasspath
 //     args = ["<your_absolute_path>/app/src/main/resources/GPStrace.txt"]
 // }
-task runReceiver(type: JavaExec) {
-    description = 'Run the Receiver application'
-    group = 'application'
-    mainClass = 'org.automotive.Receiver'
-    classpath = sourceSets.main.runtimeClasspath
-    standardInput = System.in  
-}
-// Run the Enhanced Receiver with segment detection
-task runEnhancedReceiver(type: JavaExec) {
-    description = 'Run the Enhanced Receiver application with segment detection'
-    group = 'application'
-    mainClass = 'org.automotive.ReceiverEnhanced'
-    classpath = sourceSets.main.runtimeClasspath
-    standardInput = System.in  
-}
+// task runReceiver(type: JavaExec) {
+//     description = 'Run the Receiver application'
+//     group = 'application'
+//     mainClass = 'org.automotive.Receiver'
+//     classpath = sourceSets.main.runtimeClasspath
+//     standardInput = System.in  
+// }
+// // Run the Enhanced Receiver with segment detection
+// task runEnhancedReceiver(type: JavaExec) {
+//     description = 'Run the Enhanced Receiver application with segment detection'
+//     group = 'application'
+//     mainClass = 'org.automotive.ReceiverEnhanced'
+//     classpath = sourceSets.main.runtimeClasspath
+//     standardInput = System.in  
+// }
 // Run the Receiver with HMI GUI interface
 task runReceiverHMI(type: JavaExec) {
     description = 'Run the Receiver application with ADAS HMI interface'

@@ -19,7 +19,6 @@ public abstract class ReceiverBase {
     protected boolean running = false;
     protected double simulationStartTime;
 
-    // Data structures to store the latest values for each sensor
     protected double steeringAngle = 0.0;
     protected double vehicleSpeed = 0.0;
     protected double yawRate = 0.0;
@@ -28,7 +27,6 @@ public abstract class ReceiverBase {
     protected GPScoordinates currentGPS = null;
     protected double currentSimTime = 0.0;
 
-    // Store string representations for display
     protected String steeringAngleStr = "-";
     protected String vehicleSpeedStr = "-";
     protected String yawRateStr = "-";
@@ -37,7 +35,6 @@ public abstract class ReceiverBase {
     protected String gpsLatitudeStr = "-";
     protected String gpsLongitudeStr = "-";
 
-    // Formatters for decimal values
     protected DecimalFormat df = new DecimalFormat("0.0");
     protected DecimalFormat df2 = new DecimalFormat("0.00");
     protected DecimalFormat gpsFormat = new DecimalFormat("0.000000");
@@ -53,19 +50,16 @@ public abstract class ReceiverBase {
         BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
 
         while (continueRunning) {
-            // Reset sensor values between simulations
+
             resetSensorValues();
 
-            // Initialize before starting (may be overridden by subclasses)
             initialize();
 
             // Start a new simulation
             start();
 
-            // Post-simulation processing (may be overridden by subclasses)
             afterSimulation();
 
-            // Ask if user wants to run another simulation
             try {
                 System.out.println("\nDo you want to run another simulation? (y/n)");
                 String response = consoleReader.readLine().trim().toLowerCase();
@@ -79,9 +73,6 @@ public abstract class ReceiverBase {
         System.out.println("Exiting application. Goodbye!");
     }
 
-    /**
-     * Resets all sensor values to their default state
-     */
     protected void resetSensorValues() {
         steeringAngle = 0.0;
         vehicleSpeed = 0.0;
@@ -100,18 +91,12 @@ public abstract class ReceiverBase {
         gpsLongitudeStr = "-";
     }
 
-    /**
-     * Initialization hook for subclasses
-     */
     protected void initialize() {
-        // Default implementation does nothing
+
     }
 
-    /**
-     * Post-simulation hook for subclasses
-     */
     protected void afterSimulation() {
-        // Default implementation does nothing
+
     }
 
     /**
@@ -156,37 +141,25 @@ public abstract class ReceiverBase {
         }
     }
 
-    /**
-     * Show welcome message and instructions
-     */
     protected abstract void showWelcomeMessage();
 
-    /**
-     * Print the header for the console display
-     */
     protected abstract void printConsoleHeader();
 
     /**
      * Connects to the simulator server
-     * 
-     * @return true if connection successful, false otherwise
      */
     protected boolean connectToSimulator() {
         try {
             System.out.println("Connecting to simulator at " + SERVER_ADDRESS + ":" + SERVER_PORT + "...");
             socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
 
-            // Configure socket for optimal performance
             socket.setTcpNoDelay(true);
             socket.setReceiveBufferSize(8192);
 
             out = new PrintWriter(new BufferedOutputStream(socket.getOutputStream()), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // Print header once in console
             printConsoleHeader();
-
-            // Send start signal to simulator
             out.println("START");
             out.flush();
 
@@ -198,8 +171,8 @@ public abstract class ReceiverBase {
     }
 
     /**
-     * Continuously receives messages from the socket and adds them to the queue
-     * This method runs in a separate thread to ensure no messages are missed
+     * Continuously receives messages from the socket and adds them to the queue -->
+     * runs in a separate thread.
      */
     protected void socketReceive() {
         try {
@@ -233,18 +206,10 @@ public abstract class ReceiverBase {
         }
     }
 
-    /**
-     * Hook method called before simulation completes
-     */
     protected void beforeSimulationComplete() {
         // Default implementation does nothing
     }
 
-    /**
-     * Processes messages from the queue and updates the console display
-     * Also logs all received messages to a file
-     * This method runs in a separate thread
-     */
     protected void messageProcessing() {
         // Create log file with buffered writer for better performance
         try (BufferedWriter logFile = new BufferedWriter(new FileWriter("simulation_log.txt"))) {
@@ -264,13 +229,10 @@ public abstract class ReceiverBase {
                         double timeDeltaNanos = currentTimeNanos - simulationStartTime;
                         double timeDeltaMillis = timeDeltaNanos / 1_000_000.0;
 
-                        // Process message and update values
                         processMessage(message, timeDeltaMillis, logFile);
 
-                        // Process additional data (for subclasses)
                         processAdditionalData();
 
-                        // Update console display
                         updateConsoleDisplay();
                     }
                 } catch (InterruptedException e) {
@@ -283,20 +245,12 @@ public abstract class ReceiverBase {
         }
     }
 
-    /**
-     * Hook for subclasses to process additional data after basic message processing
-     */
     protected void processAdditionalData() {
         // Default implementation does nothing
     }
 
     /**
      * Processes a received message and updates sensor values
-     * Also logs messages to file with system time delta
-     * 
-     * @param message   The message to process
-     * @param timeDelta System time delta since simulation start
-     * @param logFile   FileWriter for logging
      */
     protected void processMessage(String message, double timeDelta, Writer logFile) throws IOException {
         // Split the message into parts
@@ -311,23 +265,15 @@ public abstract class ReceiverBase {
         } else if (parts[0].trim().equals("GPS")) {
             processGPSMessage(parts);
         }
-
-        // Log the raw message with time delta - use the timeDelta parameter, not
-        // timeDeltaMillis
         logFile.write(message + " | " + String.format("%.6f", timeDelta) + "ms\n");
         logFile.flush(); // Ensure data is written immediately
     }
 
-    /**
-     * Process CAN message and update sensor values
-     * 
-     * @param parts Message parts
-     */
+    // Process CAN message and update sensor values
     protected void processCANMessage(String[] parts) {
         if (parts.length < 4)
             return; // Skip invalid CAN messages
 
-        String id = parts[1];
         double timeOffset = Double.parseDouble(parts[2]);
         currentSimTime = timeOffset;
 
@@ -398,11 +344,6 @@ public abstract class ReceiverBase {
 
     /**
      * Extracts a value from a string containing key-value pairs
-     * 
-     * @param input  Input string
-     * @param prefix The prefix to search for
-     * @param suffix The suffix to remove
-     * @return The extracted value
      */
     protected String extractValue(String input, String prefix, String suffix) {
         int start = input.indexOf(prefix);
@@ -423,28 +364,16 @@ public abstract class ReceiverBase {
         }
     }
 
-    /**
-     * Updates the console display with the latest sensor values
-     * Uses carriage return to update in place without creating new lines
-     */
     protected abstract void updateConsoleDisplay();
+    // Format sensor values for display
 
-    /**
-     * Format sensor values for display
-     * 
-     * @return Formatted values in a consistent format
-     */
     protected String[] formatDisplayValues() {
-        // Format values for display with exact precision
-        // Use DecimalFormat for time to preserve the decimal point
         DecimalFormat timeFormat = new DecimalFormat("#,##0.0");
         String timeStr = timeFormat.format(currentSimTime) + " ms";
 
-        // Format all decimal values consistently with one decimal place
         String speedStr = vehicleSpeedStr.equals("-") ? "-" : vehicleSpeedStr + " km/h";
         String steerStr = steeringAngleStr.equals("-") ? "-" : steeringAngleStr + " deg";
 
-        // Fix yaw rate display - ensure consistent formatting
         String yawStr;
         if (yawRateStr.equals("-")) {
             yawStr = "-";
@@ -456,7 +385,6 @@ public abstract class ReceiverBase {
             }
         }
 
-        // Fix acceleration displays - ensure consistent formatting
         String latStr;
         if (latAccelStr.equals("-")) {
             latStr = "-";
@@ -478,8 +406,6 @@ public abstract class ReceiverBase {
                 longStr = longAccelStr + " m/s²";
             }
         }
-
-        // Fix GPS display - show both coordinates when available
         String gpsStr;
         if (gpsLatitudeStr.equals("-") || gpsLongitudeStr.equals("-")) {
             gpsStr = "-";
@@ -495,9 +421,6 @@ public abstract class ReceiverBase {
         return new String[] { timeStr, speedStr, steerStr, yawStr, latStr, longStr, gpsStr };
     }
 
-    /**
-     * Closes the socket connection
-     */
     protected void closeConnection() {
         running = false;
 
