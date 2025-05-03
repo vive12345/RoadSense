@@ -12,9 +12,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Enhanced ADASInterface with VERY LOUD sound alerts and vibration
- */
 public class ADASInterface extends JFrame {
     // Constants for display
     private static final int WINDOW_WIDTH = 800;
@@ -236,9 +233,8 @@ public class ADASInterface extends JFrame {
         }
     }
 
-    /**
-     * Play a VERY LOUD alert sound
-     */
+    // Play a VERY LOUD alert sound
+
     private void playAlertSound() {
         if (alarmClip != null) {
             // Reset to beginning and play
@@ -264,9 +260,8 @@ public class ADASInterface extends JFrame {
         }
     }
 
-    /**
-     * Start intense window vibration effect
-     */
+    // Start intense window vibration effect
+
     private void startVibration() {
         // Get original position
         final Point originalLocation = getLocation();
@@ -301,9 +296,7 @@ public class ADASInterface extends JFrame {
         }, 500, TimeUnit.MILLISECONDS);
     }
 
-    /**
-     * Initialize the user interface components
-     */
+    // Initialize the user interface components
     private void initializeUI() {
         // Create the main panel with a BorderLayout
         mainPanel = new JPanel(new BorderLayout());
@@ -327,9 +320,8 @@ public class ADASInterface extends JFrame {
         setContentPane(mainPanel);
     }
 
-    /**
-     * Create the warning panel that shows urgent alerts
-     */
+    // Create the warning panel that shows urgent alerts
+
     private void createWarningPanel() {
         warningPanel = new JPanel();
         warningPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -346,9 +338,8 @@ public class ADASInterface extends JFrame {
         warningPanel.add(distanceLabel);
     }
 
-    /**
-     * Create the info panel showing current vehicle metrics
-     */
+    // Create the info panel showing current vehicle metrics
+
     private void createInfoPanel() {
         infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
@@ -416,9 +407,8 @@ public class ADASInterface extends JFrame {
         infoPanel.add(alertInfoLabel);
     }
 
-    /**
-     * Create the steering wheel panel for visual representation
-     */
+    // Create the steering wheel panel for visual representation
+
     private void createSteeringPanel() {
         steeringPanel = new JPanel() {
             @Override
@@ -519,36 +509,12 @@ public class ADASInterface extends JFrame {
             if (upcomingSegment.getType() == SegmentDetector.SegmentType.CURVE &&
                     distanceToSegment <= IMMEDIATE_WARNING_DISTANCE && showAlert) {
                 drawWarningSign(g2d, centerX, centerY);
-
-                // // Make the entire panel flash red for critical warnings
-                // if (distanceToSegment <= IMMEDIATE_WARNING_DISTANCE / 2) {
-                // drawFlashingBackground(g2d, width, height);
-                // }
             }
         }
 
         // Draw direction indicator for current segment
         drawDirectionIndicator(g2d, centerX, centerY + wheelSize / 2 + 60);
     }
-
-    // /**
-    // * Draw a flashing red background for critical warnings
-    // */
-    // private void drawFlashingBackground(Graphics2D g2d, int width, int height) {
-    // if (showAlert) { // Only show during the "on" part of the blink cycle
-    // // Semi-transparent red overlay
-    // g2d.setColor(new Color(255, 0, 0, 100));
-    // g2d.fillRect(0, 0, width, height);
-
-    // // Draw "DANGER" text
-    // g2d.setFont(new Font("Arial", Font.BOLD, 40));
-    // g2d.setColor(Color.WHITE);
-    // String dangerText = "!!! DANGER !!!";
-    // FontMetrics fm = g2d.getFontMetrics();
-    // int textWidth = fm.stringWidth(dangerText);
-    // g2d.drawString(dangerText, width / 2 - textWidth / 2, height - 50);
-    // }
-    // }
 
     /**
      * Draw a distance indicator showing how far to the next segment
@@ -666,17 +632,8 @@ public class ADASInterface extends JFrame {
         g2d.drawString(text, x - textWidth / 2, y + height - 12);
     }
 
-    /**
-     * Update the interface with new vehicle and segment data
-     * 
-     * @param speed         Current vehicle speed (km/h)
-     * @param steeringAngle Current steering wheel angle (degrees)
-     * @param yawRate       Current yaw rate (deg/s)
-     * @param latAccel      Current lateral acceleration (m/s²)
-     * @param longAccel     Current longitudinal acceleration (m/s²)
-     * @param segmentType   Current segment type
-     * @param time          Current simulation time (ms)
-     */
+    // Update the interface with new vehicle and segment data
+
     public void updateVehicleData(double speed, double steeringAngle, double yawRate,
             double latAccel, double longAccel, SegmentDetector.SegmentType segmentType,
             double time) {
@@ -706,12 +663,8 @@ public class ADASInterface extends JFrame {
         steeringPanel.repaint();
     }
 
-    /**
-     * Update the interface with ADAS curve warning information
-     * 
-     * @param segment  The upcoming segment
-     * @param distance Distance to the upcoming segment (meters)
-     */
+    // Update the interface with ADAS curve warning information
+
     public void updateADASWarning(SegmentData segment, double distance) {
         this.upcomingSegment = segment;
         this.distanceToSegment = distance;

@@ -17,7 +17,7 @@ public abstract class ReceiverBase {
     protected PrintWriter out;
     protected BufferedReader in;
     protected boolean running = false;
-    protected long simulationStartTime;
+    protected double simulationStartTime;
 
     // Data structures to store the latest values for each sensor
     protected double steeringAngle = 0.0;
@@ -128,7 +128,7 @@ public abstract class ReceiverBase {
             // Connect to simulator
             if (connectToSimulator()) {
                 running = true;
-                simulationStartTime = System.nanoTime();
+                simulationStartTime = (double) System.nanoTime();
 
                 // Start threads for receiving and processing messages
                 Thread receiveThread = new Thread(this::socketReceive);
@@ -260,9 +260,9 @@ public abstract class ReceiverBase {
 
                     if (message != null) {
                         // Calculate time delta with nanosecond precision
-                        long currentTimeNanos = System.nanoTime();
-                        long timeDeltaNanos = currentTimeNanos - simulationStartTime;
-                        long timeDeltaMillis = TimeUnit.NANOSECONDS.toMillis(timeDeltaNanos);
+                        double currentTimeNanos = (double) System.nanoTime();
+                        double timeDeltaNanos = currentTimeNanos - simulationStartTime;
+                        double timeDeltaMillis = timeDeltaNanos / 1_000_000.0;
 
                         // Process message and update values
                         processMessage(message, timeDeltaMillis, logFile);
@@ -298,7 +298,7 @@ public abstract class ReceiverBase {
      * @param timeDelta System time delta since simulation start
      * @param logFile   FileWriter for logging
      */
-    protected void processMessage(String message, long timeDelta, Writer logFile) throws IOException {
+    protected void processMessage(String message, double timeDelta, Writer logFile) throws IOException {
         // Split the message into parts
         String[] parts = message.split("\\|");
 
@@ -312,8 +312,9 @@ public abstract class ReceiverBase {
             processGPSMessage(parts);
         }
 
-        // Log the raw message with time delta
-        logFile.write(message + " | " + timeDelta + "ms\n");
+        // Log the raw message with time delta - use the timeDelta parameter, not
+        // timeDeltaMillis
+        logFile.write(message + " | " + String.format("%.6f", timeDelta) + "ms\n");
         logFile.flush(); // Ensure data is written immediately
     }
 

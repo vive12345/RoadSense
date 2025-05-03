@@ -479,7 +479,6 @@ public class CANTraceSimulation {
         GPScoordinates currentGPS = gpsTrace.getNextCoordinate();
         if (currentGPS != null) {
             sendGPSData(out, currentGPS);
-            System.out.println("Sent initial GPS data at offset: " + currentGPS.getTimeOffset() + " ms");
         }
 
         // Get the next GPS coordinate
