@@ -6,11 +6,14 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.text.DecimalFormat;
+import javax.sound.sampled.*;
+import java.io.ByteArrayInputStream;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
- * This class implements a simplified graphical HMI (Human-Machine Interface)
- * for the ADAS
- * Curve Warning system, featuring just a steering wheel and warning indicators.
+ * Enhanced ADASInterface with VERY LOUD sound alerts and vibration
  */
 public class ADASInterface extends JFrame {
     // Constants for display
@@ -65,6 +68,15 @@ public class ADASInterface extends JFrame {
     private long alertStartTime = 0;
     private static final long ALERT_BLINK_INTERVAL = 500; // milliseconds
 
+    // Alert sound and vibration control
+    private boolean isAlertActive = false;
+    private long lastAlertTime = 0;
+    private static final long ALERT_INTERVAL = 1500; // milliseconds between alerts
+    private ScheduledExecutorService executorService;
+
+    // Audio clip for alarm sound
+    private Clip alarmClip;
+
     /**
      * Constructor for the ADAS Interface
      * 
@@ -72,6 +84,12 @@ public class ADASInterface extends JFrame {
      */
     public ADASInterface(boolean isFirstRun) {
         this.isDataCollectionMode = isFirstRun;
+
+        // Initialize thread pool for alerts
+        this.executorService = Executors.newScheduledThreadPool(2);
+
+        // Prepare the audio system with loud alert sound
+        prepareAudioSystem();
 
         // Set up the window
         setTitle("ADAS Curve Warning System");
@@ -84,6 +102,13 @@ public class ADASInterface extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 System.out.println("ADAS HMI closed. Continuing in console mode.");
+                stopAlerts();
+                if (executorService != null) {
+                    executorService.shutdown();
+                }
+                if (alarmClip != null) {
+                    alarmClip.close();
+                }
             }
         });
 
@@ -98,7 +123,59 @@ public class ADASInterface extends JFrame {
     }
 
     /**
-     * Starts a timer for blinking alert icons
+     * Prepare the audio system for VERY LOUD alerts
+     */
+    private void prepareAudioSystem() {
+        try {
+            // Create a higher amplitude dual-tone for maximum loudness
+            // This combines two frequencies for a more attention-grabbing sound
+            AudioFormat format = new AudioFormat(44100, 16, 1, true, false);
+
+            // Create an audio stream with a loud dual-tone alarm sound
+            // Using 2 seconds of audio for a longer alert
+            byte[] buffer = new byte[44100 * 2];
+
+            for (int i = 0; i < buffer.length; i++) {
+                // Combine two frequencies: 880Hz and 1760Hz with maximum amplitude
+                double angle1 = 2.0 * Math.PI * i / (44100 / 880.0); // 880Hz tone
+                double angle2 = 2.0 * Math.PI * i / (44100 / 1760.0); // 1760Hz tone (one octave higher)
+
+                // Use near-maximum amplitude (32767 is max for 16-bit audio)
+                // Scale to 90% of maximum to avoid distortion
+                short sample = (short) (Math.sin(angle1) * 15000 + Math.sin(angle2) * 15000);
+
+                // Pack the sample into two bytes (little endian)
+                buffer[i] = (byte) (sample & 0xFF);
+                i++;
+                if (i < buffer.length) {
+                    buffer[i] = (byte) ((sample >> 8) & 0xFF);
+                }
+            }
+
+            // Create a clip that can be played repeatedly
+            DataLine.Info info = new DataLine.Info(Clip.class, format);
+            if (AudioSystem.isLineSupported(info)) {
+                alarmClip = (Clip) AudioSystem.getLine(info);
+                AudioInputStream ais = new AudioInputStream(
+                        new ByteArrayInputStream(buffer),
+                        format, buffer.length / format.getFrameSize());
+                alarmClip.open(ais);
+
+                // Set volume to maximum
+                if (alarmClip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                    FloatControl gainControl = (FloatControl) alarmClip.getControl(FloatControl.Type.MASTER_GAIN);
+                    // Set gain to maximum value (in decibels)
+                    gainControl.setValue(gainControl.getMaximum());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error setting up audio system: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Starts a timer for blinking alert icons and triggering alerts
      */
     private void startAlertTimer() {
         Timer timer = new Timer(100, e -> {
@@ -107,15 +184,121 @@ public class ADASInterface extends JFrame {
                 showAlert = !showAlert;
                 alertStartTime = System.currentTimeMillis();
 
-                // Only repaint if we have an immediate warning
+                // Check if we need to trigger alerts
                 if (upcomingSegment != null &&
                         upcomingSegment.getType() == SegmentDetector.SegmentType.CURVE &&
                         distanceToSegment <= IMMEDIATE_WARNING_DISTANCE) {
+
+                    // Only trigger alerts when blinking on and not already alerting
+                    if (showAlert && !isAlertActive &&
+                            System.currentTimeMillis() - lastAlertTime > ALERT_INTERVAL) {
+                        triggerAlerts();
+                    }
+
+                    // Always repaint for blinking effect
                     steeringPanel.repaint();
+                } else {
+                    // Stop any active alerts if we're no longer in warning state
+                    stopAlerts();
                 }
             }
         });
         timer.start();
+    }
+
+    /**
+     * Trigger vibration and sound alerts
+     */
+    private void triggerAlerts() {
+        if (isAlertActive)
+            return; // Don't stack alerts
+
+        isAlertActive = true;
+        lastAlertTime = System.currentTimeMillis();
+
+        // Start both vibration and sound alerts in parallel
+        playAlertSound();
+        startVibration();
+
+        // Schedule the end of the alert status after 1 second
+        executorService.schedule(() -> {
+            isAlertActive = false;
+        }, 1000, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Stop all active alerts
+     */
+    private void stopAlerts() {
+        // Stop the sound if it's playing
+        if (alarmClip != null && alarmClip.isRunning()) {
+            alarmClip.stop();
+        }
+    }
+
+    /**
+     * Play a VERY LOUD alert sound
+     */
+    private void playAlertSound() {
+        if (alarmClip != null) {
+            // Reset to beginning and play
+            alarmClip.setFramePosition(0);
+            alarmClip.start();
+
+            // Also use the system beep as a backup alert method
+            try {
+                // Multiple beeps for added attention
+                for (int i = 0; i < 3; i++) {
+                    final int delay = i * 200;
+                    executorService.schedule(() -> {
+                        Toolkit.getDefaultToolkit().beep();
+                    }, delay, TimeUnit.MILLISECONDS);
+                }
+            } catch (Exception e) {
+                // Fallback if beep fails
+                System.err.println("Error playing system beep: " + e.getMessage());
+            }
+
+            // Announce the alert verbally (in a real system this would use TTS)
+            System.out.println("!!! LOUD AUDIO ALERT: CURVE AHEAD! REDUCE SPEED NOW! !!!");
+        }
+    }
+
+    /**
+     * Start intense window vibration effect
+     */
+    private void startVibration() {
+        // Get original position
+        final Point originalLocation = getLocation();
+        final int vibrationIntensity = 8; // Higher pixels to move for stronger effect
+
+        // Create stronger vibration by moving window back and forth rapidly in multiple
+        // directions
+        for (int i = 0; i < 10; i++) { // More iterations for longer effect
+            final int delay = i * 30; // milliseconds between movements (faster)
+
+            // Move in multiple directions for more noticeable effect
+            executorService.schedule(() -> {
+                setLocation(originalLocation.x + vibrationIntensity, originalLocation.y);
+            }, delay, TimeUnit.MILLISECONDS);
+
+            executorService.schedule(() -> {
+                setLocation(originalLocation.x - vibrationIntensity, originalLocation.y);
+            }, delay + 15, TimeUnit.MILLISECONDS);
+
+            executorService.schedule(() -> {
+                setLocation(originalLocation.x, originalLocation.y + vibrationIntensity);
+            }, delay + 30, TimeUnit.MILLISECONDS);
+
+            executorService.schedule(() -> {
+                setLocation(originalLocation.x, originalLocation.y - vibrationIntensity);
+            }, delay + 45, TimeUnit.MILLISECONDS);
+        }
+
+        // Reset position after vibration completes
+        executorService.schedule(() -> {
+            setLocation(originalLocation);
+        }, 500, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -225,6 +408,12 @@ public class ADASInterface extends JFrame {
         infoPanel.add(curveDirectionLabel);
         infoPanel.add(Box.createVerticalStrut(50));
         infoPanel.add(recordingLabel);
+
+        // Add alert information label (visible so users know alerts are enabled)
+        JLabel alertInfoLabel = createLabel("AUDIO/HAPTIC ALERTS", 14, Font.BOLD);
+        alertInfoLabel.setForeground(WARNING_COLOR);
+        infoPanel.add(Box.createVerticalStrut(30));
+        infoPanel.add(alertInfoLabel);
     }
 
     /**
@@ -330,12 +519,36 @@ public class ADASInterface extends JFrame {
             if (upcomingSegment.getType() == SegmentDetector.SegmentType.CURVE &&
                     distanceToSegment <= IMMEDIATE_WARNING_DISTANCE && showAlert) {
                 drawWarningSign(g2d, centerX, centerY);
+
+                // // Make the entire panel flash red for critical warnings
+                // if (distanceToSegment <= IMMEDIATE_WARNING_DISTANCE / 2) {
+                // drawFlashingBackground(g2d, width, height);
+                // }
             }
         }
 
         // Draw direction indicator for current segment
         drawDirectionIndicator(g2d, centerX, centerY + wheelSize / 2 + 60);
     }
+
+    // /**
+    // * Draw a flashing red background for critical warnings
+    // */
+    // private void drawFlashingBackground(Graphics2D g2d, int width, int height) {
+    // if (showAlert) { // Only show during the "on" part of the blink cycle
+    // // Semi-transparent red overlay
+    // g2d.setColor(new Color(255, 0, 0, 100));
+    // g2d.fillRect(0, 0, width, height);
+
+    // // Draw "DANGER" text
+    // g2d.setFont(new Font("Arial", Font.BOLD, 40));
+    // g2d.setColor(Color.WHITE);
+    // String dangerText = "!!! DANGER !!!";
+    // FontMetrics fm = g2d.getFontMetrics();
+    // int textWidth = fm.stringWidth(dangerText);
+    // g2d.drawString(dangerText, width / 2 - textWidth / 2, height - 50);
+    // }
+    // }
 
     /**
      * Draw a distance indicator showing how far to the next segment
@@ -389,7 +602,7 @@ public class ADASInterface extends JFrame {
      * @param y   Center Y position
      */
     private void drawWarningSign(Graphics2D g2d, int x, int y) {
-        int size = 80;
+        int size = 100; // Larger warning sign
 
         // Draw red triangle warning sign
         int[] xPoints = { x, x - size / 2, x + size / 2 };
@@ -403,7 +616,7 @@ public class ADASInterface extends JFrame {
         g2d.drawPolygon(xPoints, yPoints, 3);
 
         // Draw exclamation mark
-        g2d.setFont(new Font("Arial", Font.BOLD, 40));
+        g2d.setFont(new Font("Arial", Font.BOLD, 50)); // Larger font
         FontMetrics fm = g2d.getFontMetrics();
         int textWidth = fm.stringWidth("!");
         int textHeight = fm.getHeight();
