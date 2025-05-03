@@ -1,102 +1,6 @@
-// package org.automotive;
-
-// import java.util.LinkedList;
-// import java.util.Queue;
-
-// /**
-//  * This class is responsible for detecting different segment types (straight or
-//  * curve)
-//  * by analyzing sensor data over a window of time.
-//  */
-// public class SegmentDetector {
-//     // Constants for segment detection
-//     private static final double YAW_RATE_THRESHOLD = 1.0; // °/s - threshold for detecting a curve
-//     private static final double STEERING_ANGLE_THRESHOLD = 10.0; // ° - threshold for detecting a curve
-//     private static final int WINDOW_SIZE = 5; // Number of samples to consider for segment detection
-//     private static final int CONSECUTIVE_SAMPLES_REQUIRED = 3; // Number of consecutive samples exceeding threshold
-
-//     // Buffers for sensor values
-//     private Queue<Double> yawRateBuffer = new LinkedList<>();
-//     private Queue<Double> steeringAngleBuffer = new LinkedList<>();
-
-//     // Current segment type
-//     private SegmentType currentSegment = SegmentType.STRAIGHT; // Default to straight
-
-//     // Enumeration for segment types
-//     public enum SegmentType {
-//         STRAIGHT,
-//         CURVE
-//     }
-
-//     /**
-//      * Updates the detector with new sensor values and determines the segment type
-//      * 
-//      * @param yawRate       Current yaw rate value (°/s)
-//      * @param steeringAngle Current steering angle value (°)
-//      * @return The detected segment type
-//      */
-//     public SegmentType updateAndDetect(double yawRate, double steeringAngle) {
-//         // Add new values to buffers
-//         yawRateBuffer.add(Math.abs(yawRate)); // Use absolute value for threshold comparison
-//         steeringAngleBuffer.add(Math.abs(steeringAngle));
-
-//         // Maintain buffer size
-//         if (yawRateBuffer.size() > WINDOW_SIZE) {
-//             yawRateBuffer.remove();
-//         }
-//         if (steeringAngleBuffer.size() > WINDOW_SIZE) {
-//             steeringAngleBuffer.remove();
-//         }
-
-//         // Only start detection when we have enough samples
-//         if (yawRateBuffer.size() >= WINDOW_SIZE) {
-//             // Count consecutive samples exceeding thresholds
-//             int yawRateExceedCount = 0;
-//             int steeringAngleExceedCount = 0;
-
-//             for (Double yaw : yawRateBuffer) {
-//                 if (yaw > YAW_RATE_THRESHOLD) {
-//                     yawRateExceedCount++;
-//                 }
-//             }
-
-//             for (Double angle : steeringAngleBuffer) {
-//                 if (angle > STEERING_ANGLE_THRESHOLD) {
-//                     steeringAngleExceedCount++;
-//                 }
-//             }
-
-//             // Determine segment type based on consecutive samples
-//             if (yawRateExceedCount >= CONSECUTIVE_SAMPLES_REQUIRED ||
-//                     steeringAngleExceedCount >= CONSECUTIVE_SAMPLES_REQUIRED) {
-//                 currentSegment = SegmentType.CURVE;
-//             } else {
-//                 currentSegment = SegmentType.STRAIGHT;
-//             }
-//         }
-
-//         return currentSegment;
-//     }
-
-//     /**
-//      * Get the current detected segment type
-//      * 
-//      * @return The current segment type
-//      */
-//     public SegmentType getCurrentSegment() {
-//         return currentSegment;
-//     }
-
-//     /**
-//      * Reset the detector buffers and state
-//      */
-//     public void reset() {
-//         yawRateBuffer.clear();
-//         steeringAngleBuffer.clear();
-//         currentSegment = SegmentType.STRAIGHT;
-//     }
-// }
 package org.automotive;
+
+import org.automotive.utils.MathUtils;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -104,10 +8,10 @@ import java.util.Arrays;
 
 /**
  * Enhanced SegmentDetector with improved curve direction detection and
- * stability
+ * stability.
  */
 public class SegmentDetector {
-    // Constants for segment detection - increased window size for better stability
+    // Constants for segment detection
     private static final double YAW_RATE_THRESHOLD = 1.0; // °/s - threshold for detecting a curve
     private static final double STEERING_ANGLE_THRESHOLD = 10.0; // ° - threshold for detecting a curve
     private static final int WINDOW_SIZE = 10; // Increased window size for better stability
@@ -178,8 +82,9 @@ public class SegmentDetector {
             Double[] rawSteeringArray = rawSteeringAngleBuffer.toArray(new Double[0]);
 
             // Find maximum consecutive samples exceeding threshold
-            int maxConsecutiveYaw = countMaxConsecutiveOverThreshold(yawArray, YAW_RATE_THRESHOLD);
-            int maxConsecutiveSteering = countMaxConsecutiveOverThreshold(steeringArray, STEERING_ANGLE_THRESHOLD);
+            int maxConsecutiveYaw = MathUtils.countMaxConsecutiveOverThreshold(yawArray, YAW_RATE_THRESHOLD);
+            int maxConsecutiveSteering = MathUtils.countMaxConsecutiveOverThreshold(steeringArray,
+                    STEERING_ANGLE_THRESHOLD);
 
             // Determine new segment type based on thresholds
             SegmentType newSegmentType;
@@ -206,29 +111,6 @@ public class SegmentDetector {
         }
 
         return currentSegment;
-    }
-
-    /**
-     * Count maximum consecutive values over threshold
-     * 
-     * @param values    Array of values to check
-     * @param threshold Threshold to compare against
-     * @return Maximum number of consecutive values exceeding threshold
-     */
-    private int countMaxConsecutiveOverThreshold(Double[] values, double threshold) {
-        int maxConsecutive = 0;
-        int currentConsecutive = 0;
-
-        for (double value : values) {
-            if (value > threshold) {
-                currentConsecutive++;
-                maxConsecutive = Math.max(maxConsecutive, currentConsecutive);
-            } else {
-                currentConsecutive = 0;
-            }
-        }
-
-        return maxConsecutive;
     }
 
     /**

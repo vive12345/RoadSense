@@ -1,5 +1,8 @@
 package org.automotive;
 
+import org.automotive.utils.GPSUtils;
+import org.automotive.utils.MathUtils;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -187,7 +190,6 @@ public class SegmentData {
      * @param endCoords    The GPS coordinates at segment end
      * @param finalHeading The final vehicle heading at segment end
      */
-    // Modify finalizeSegment() in SegmentData.java
     public void finalizeSegment(double endTime, GPScoordinates endCoords, double finalHeading) {
         this.endTime = endTime;
         this.endCoordinates = endCoords;
@@ -196,26 +198,22 @@ public class SegmentData {
         if (endCoords != null) {
             gpsPoints.add(endCoords);
         }
+
         if (headingValues.size() > 0) {
             headingValues.add(finalHeading);
         }
 
         // Calculate average speed
-        if (!speedValues.isEmpty()) {
-            double sum = 0;
-            for (double value : speedValues) {
-                sum += value;
-            }
-            averageSpeed = sum / speedValues.size();
-        }
+        averageSpeed = MathUtils.calculateAverage(speedValues);
 
         // Calculate average yaw rate for curves
         if (type == SegmentDetector.SegmentType.CURVE && !yawRateValues.isEmpty()) {
-            double sum = 0;
+            // Create list of absolute values for average
+            List<Double> absYawRates = new ArrayList<>();
             for (double value : yawRateValues) {
-                sum += Math.abs(value); // Use absolute values for average
+                absYawRates.add(Math.abs(value));
             }
-            averageYawRate = sum / yawRateValues.size();
+            averageYawRate = MathUtils.calculateAverage(absYawRates);
         }
 
         // Calculate curve degrees (total heading change)
@@ -252,19 +250,7 @@ public class SegmentData {
             // If we have more than 2 heading values, calculate total accumulated heading
             // change
             if (headingValues.size() > 2) {
-                double accumulatedChange = 0;
-                for (int i = 1; i < headingValues.size(); i++) {
-                    double prev = headingValues.get(i - 1);
-                    double curr = headingValues.get(i);
-                    double diff = Math.abs(curr - prev);
-
-                    // Normalize difference
-                    if (diff > 180) {
-                        diff = 360 - diff;
-                    }
-
-                    accumulatedChange += diff;
-                }
+                double accumulatedChange = GPSUtils.calculateTotalHeadingChange(headingValues);
 
                 // Use accumulated change if it's larger (for curves that go back and forth)
                 if (accumulatedChange > curveDegrees) {
@@ -276,7 +262,9 @@ public class SegmentData {
         }
     }
 
-    // Enhanced length calculation for straight segments
+    /**
+     * Enhanced length calculation for straight segments
+     */
     private void calculateSegmentLength() {
         if (type == SegmentDetector.SegmentType.STRAIGHT) {
             if (gpsPoints.size() >= 2) {
@@ -284,12 +272,12 @@ public class SegmentData {
                 if (gpsPoints.size() > 2) {
                     double totalLength = 0.0;
                     for (int i = 1; i < gpsPoints.size(); i++) {
-                        totalLength += calculateDistance(gpsPoints.get(i - 1), gpsPoints.get(i));
+                        totalLength += GPSUtils.calculateDistance(gpsPoints.get(i - 1), gpsPoints.get(i));
                     }
                     length = totalLength;
                 } else {
                     // Just start and end points
-                    length = calculateDistance(startCoordinates, endCoordinates);
+                    length = GPSUtils.calculateDistance(startCoordinates, endCoordinates);
                 }
             } else {
                 length = 0.0;
@@ -300,7 +288,9 @@ public class SegmentData {
         }
     }
 
-    // Add to SegmentData.java
+    /**
+     * Calculate curve degrees from yaw rate as a backup method
+     */
     private void calculateCurveDegreesFromYawRate() {
         if (type == SegmentDetector.SegmentType.CURVE && !yawRateValues.isEmpty()) {
             // Calculate duration in seconds
@@ -317,34 +307,6 @@ public class SegmentData {
                 }
             }
         }
-    }
-
-    /**
-     * Calculate the distance between two GPS coordinates using the Haversine
-     * formula
-     * 
-     * @param start The starting coordinates
-     * @param end   The ending coordinates
-     * @return The distance in meters
-     */
-    private double calculateDistance(GPScoordinates start, GPScoordinates end) {
-        final double EARTH_RADIUS = 6371000; // Earth radius in meters
-
-        double lat1 = Math.toRadians(start.getLatitude());
-        double lng1 = Math.toRadians(start.getLongitude());
-        double lat2 = Math.toRadians(end.getLatitude());
-        double lng2 = Math.toRadians(end.getLongitude());
-
-        double dLat = lat2 - lat1;
-        double dLng = lng2 - lng1;
-
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1) * Math.cos(lat2) *
-                        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return EARTH_RADIUS * c;
     }
 
     /**
